@@ -37,7 +37,13 @@ export function loadDraft(): ResumeDraft | null {
 export function saveDraft(draft: ResumeDraft): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    const photoUrl = draft.header.photoUrl ?? "";
+    const safeDraft: ResumeDraft =
+      photoUrl.startsWith("data:")
+        ? { ...draft, header: { ...draft.header, photoUrl: "" } }
+        : draft;
+
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(safeDraft));
   } catch {
     // ignore quota/security errors
   }

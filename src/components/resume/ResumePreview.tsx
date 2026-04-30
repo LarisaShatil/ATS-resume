@@ -59,24 +59,77 @@ function PreviewSection({
   );
 }
 
-function ContactIcon({ kind }: { kind: "phone" | "email" | "link" }) {
-  const common =
-    "h-8 w-8 rounded-full bg-slate-800 text-white flex items-center justify-center";
+function ContactIcon({
+  kind,
+}: {
+  kind: "phone" | "email" | "location" | "link" | "linkedin" | "github";
+}) {
+  const common = "h-4 w-4 text-slate-900";
   return (
     <span className={common} aria-hidden="true">
       {kind === "phone" ? (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-          <path d="M6.6 10.8c1.5 2.9 3.7 5.1 6.6 6.6l2.2-2.2c.3-.3.8-.4 1.2-.2 1.3.4 2.7.6 4.2.6.7 0 1.2.5 1.2 1.2V21c0 .7-.5 1.2-1.2 1.2C10.6 22.2 1.8 13.4 1.8 2.4 1.8 1.7 2.3 1.2 3 1.2h3.6c.7 0 1.2.5 1.2 1.2 0 1.4.2 2.8.6 4.2.1.4 0 .9-.2 1.2l-2.2 2.2z" />
+        <svg
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.18 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.72c.12.86.33 1.7.63 2.5a2 2 0 0 1-.45 2.11L8.1 9.1a16 16 0 0 0 6.8 6.8l.77-1.17a2 2 0 0 1 2.11-.45c.8.3 1.64.51 2.5.63A2 2 0 0 1 22 16.92z" />
         </svg>
       ) : null}
       {kind === "email" ? (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-          <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z" />
+        <svg
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+          <path d="m22 6-10 7L2 6" />
+        </svg>
+      ) : null}
+      {kind === "location" ? (
+        <svg
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1 1 18 0z" />
+          <path d="M12 10a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" />
         </svg>
       ) : null}
       {kind === "link" ? (
+        <svg
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M10 13a5 5 0 0 1 0-7l1-1a5 5 0 0 1 7 7l-1 1" />
+          <path d="M14 11a5 5 0 0 1 0 7l-1 1a5 5 0 0 1-7-7l1-1" />
+        </svg>
+      ) : null}
+      {kind === "linkedin" ? (
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-          <path d="M3.9 12a5 5 0 0 1 5-5h4v2h-4a3 3 0 0 0 0 6h4v2h-4a5 5 0 0 1-5-5zm7-1h2v2h-2v-2zm4.1-4h-4V5h4a5 5 0 0 1 0 10h-4v-2h4a3 3 0 0 0 0-6z" />
+          <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5zM0.5 8.5H4.5V23H0.5V8.5zM8.5 8.5H12.3V10.5H12.35C12.9 9.5 14.25 8.4 16.25 8.4 20.35 8.4 21.5 11.1 21.5 14.6V23H17.5V15.2C17.5 13.3 17.45 10.9 15 10.9 12.5 10.9 12.1 12.9 12.1 15.1V23H8.5V8.5z" />
+        </svg>
+      ) : null}
+      {kind === "github" ? (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.58 2 12.24c0 4.52 2.87 8.35 6.84 9.7.5.1.68-.22.68-.48 0-.24-.01-.88-.01-1.72-2.78.62-3.37-1.38-3.37-1.38-.45-1.18-1.1-1.49-1.1-1.49-.9-.64.07-.63.07-.63 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.55-1.14-4.55-5.08 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.2 9.2 0 0 1 12 6.84c.85 0 1.71.12 2.51.36 1.9-1.32 2.74-1.05 2.74-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.95-2.34 4.82-4.57 5.08.36.32.68.95.68 1.91 0 1.38-.01 2.49-.01 2.83 0 .26.18.59.69.48A10.25 10.25 0 0 0 22 12.24C22 6.58 17.52 2 12 2z" />
         </svg>
       ) : null}
     </span>
@@ -91,33 +144,28 @@ export function ResumePreview({ labels, draft }: Props) {
   const showGithub = draft.showGithub && hasValue(h.github);
   const showPortfolio = draft.showPortfolio && hasValue(h.portfolio);
 
-  const contactLeft: Array<{ kind: "phone" | "email" | "link"; value: string; href?: string }> =
-    [];
-  const contactRight: Array<{ kind: "phone" | "email" | "link"; value: string; href?: string }> =
-    [];
+  const contactEntries: Array<{
+    kind: "phone" | "email" | "location" | "link" | "linkedin" | "github";
+    value: string;
+    href?: string;
+  }> = [
+    hasValue(h.phone) ? { kind: "phone", value: h.phone.trim() } : null,
+    hasValue(h.email) ? { kind: "email", value: h.email.trim() } : null,
+    hasValue(h.location) ? { kind: "location", value: h.location.trim() } : null,
+    showLinkedIn
+      ? { kind: "linkedin", value: h.linkedIn!.trim(), href: h.linkedIn!.trim() }
+      : null,
+    showGithub ? { kind: "github", value: h.github!.trim(), href: h.github!.trim() } : null,
+    showPortfolio ? { kind: "link", value: h.portfolio!.trim(), href: h.portfolio!.trim() } : null,
+  ].filter(Boolean) as Array<{
+    kind: "phone" | "email" | "location" | "link" | "linkedin" | "github";
+    value: string;
+    href?: string;
+  }>;
 
-  if (hasValue(h.phone)) contactLeft.push({ kind: "phone", value: h.phone.trim() });
-  if (hasValue(h.email)) contactLeft.push({ kind: "email", value: h.email.trim() });
-  if (hasValue(h.location)) contactLeft.push({ kind: "link", value: h.location.trim() });
-
-  if (showLinkedIn)
-    contactRight.push({
-      kind: "link",
-      value: h.linkedIn!.trim(),
-      href: h.linkedIn!.trim(),
-    });
-  if (showGithub)
-    contactRight.push({
-      kind: "link",
-      value: h.github!.trim(),
-      href: h.github!.trim(),
-    });
-  if (showPortfolio)
-    contactRight.push({
-      kind: "link",
-      value: h.portfolio!.trim(),
-      href: h.portfolio!.trim(),
-    });
+  const mid = Math.ceil(contactEntries.length / 2);
+  const contactLeft = contactEntries.slice(0, mid);
+  const contactRight = contactEntries.slice(mid);
 
   const fileName = `resume-${slugifyFilePart(h.fullName || "")}.pdf`;
 
@@ -136,28 +184,28 @@ export function ResumePreview({ labels, draft }: Props) {
       </div>
 
       <div className="mt-5 rounded-xl border border-slate-200 bg-white p-6">
-        <header className="flex items-start gap-6">
+        <header className="flex items-center gap-4">
           {showPhoto ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={h.photoUrl}
               alt={h.fullName ? `${h.fullName} photo` : "Photo"}
-              className="h-24 w-24 rounded-full border border-slate-200 object-cover"
+              className="h-[94px] w-[94px] rounded-full border border-slate-200 object-cover"
             />
           ) : null}
           <div className="min-w-0 flex-1">
-            <h1 className="text-3xl font-medium tracking-tight text-slate-900">
+            <h1 className="text-[28px] font-semibold leading-tight tracking-tight text-slate-900">
               {h.fullName || "Your Name"}
             </h1>
             {hasValue(h.title) ? (
-              <div className="mt-2 text-lg font-semibold uppercase tracking-wide text-slate-800">
+              <div className="mt-1 text-[16px] font-semibold uppercase tracking-wide text-slate-800">
                 {h.title}
               </div>
             ) : null}
           </div>
         </header>
 
-        {contactLeft.length || contactRight.length ? (
+        {contactEntries.length ? (
           <section className="mt-5">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-medium tracking-tight text-slate-700">
@@ -166,7 +214,7 @@ export function ResumePreview({ labels, draft }: Props) {
               <div className="h-px flex-1 bg-slate-200" />
             </div>
 
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-2 gap-8">
               <div className="grid gap-2">
                 {contactLeft.map((c, idx) => (
                   <div key={`${idx}-${c.value}`} className="flex items-center gap-3">
@@ -184,7 +232,7 @@ export function ResumePreview({ labels, draft }: Props) {
                         href={c.href}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-sm text-slate-800 underline decoration-slate-300 underline-offset-2 hover:decoration-slate-400"
+                        className="text-sm text-slate-800"
                       >
                         {c.value}
                       </a>
@@ -206,7 +254,11 @@ export function ResumePreview({ labels, draft }: Props) {
 
         {draft.sections.skills.length ? (
           <PreviewSection title={labels.skills}>
-            <p>{draft.sections.skills.join(", ")}</p>
+            <ul className="list-disc space-y-1 pl-5">
+              {draft.sections.skills.map((x, idx) => (
+                <li key={`${idx}-${x}`}>{x}</li>
+              ))}
+            </ul>
           </PreviewSection>
         ) : null}
 

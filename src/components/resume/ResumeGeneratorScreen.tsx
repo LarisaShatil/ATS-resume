@@ -89,7 +89,7 @@ export function ResumeGeneratorScreen() {
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.55fr)]">
         <div className="grid gap-6">
           <ResumeHeaderForm
             labels={labels}
@@ -102,15 +102,6 @@ export function ResumeGeneratorScreen() {
             onVisibilityChange={(patch) => patchDraft(patch)}
           />
 
-          <ResumeSourceInput
-            labels={labels}
-            sourceText={draft.sourceText}
-            jobDescription={draft.jobDescription}
-            onChange={(patch) => patchDraft(patch)}
-            onGenerate={onGenerateFromText}
-            message={sourceMessage}
-          />
-
           <ResumeSectionsEditor
             labels={labels}
             sections={draft.sections}
@@ -118,6 +109,15 @@ export function ResumeGeneratorScreen() {
             showCertificates={draft.showCertificates}
             onSectionsChange={patchSections}
             onVisibilityChange={(patch) => patchDraft(patch)}
+          />
+
+          <ResumeSourceInput
+            labels={labels}
+            sourceText={draft.sourceText}
+            jobDescription={draft.jobDescription}
+            onChange={(patch) => patchDraft(patch)}
+            onGenerate={onGenerateFromText}
+            message={sourceMessage}
           />
         </div>
 
