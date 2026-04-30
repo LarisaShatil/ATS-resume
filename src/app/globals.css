@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@layer base {
+  html,
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-indigo-500/60 ring-offset-2 ring-offset-white;
+  }
+
+  ::selection {
+    @apply bg-indigo-100 text-indigo-900;
+  }
+}
