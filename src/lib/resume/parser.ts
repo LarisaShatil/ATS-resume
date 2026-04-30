@@ -1,4 +1,4 @@
-import type { ResumeSections } from "./types";
+import type { ExperienceJob, ResumeSections } from "./types";
 
 const SKILL_KEYWORDS = [
   "javascript",
@@ -173,10 +173,22 @@ export function parseSourceText(text: string): ResumeSections {
   const skills = extractSkills(text);
   const buckets = extractBuckets(text);
 
+  const experience: ExperienceJob[] = buckets.experience.length
+    ? [
+        {
+          title: "",
+          company: "",
+          location: "",
+          dates: "",
+          highlights: buckets.experience,
+        },
+      ]
+    : [];
+
   return {
     summary,
     skills,
-    experience: buckets.experience,
+    experience,
     projects: buckets.projects,
     education: buckets.education,
     certificates: buckets.certificates,

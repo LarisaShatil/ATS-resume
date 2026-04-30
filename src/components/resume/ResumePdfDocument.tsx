@@ -99,6 +99,22 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#111827",
   },
+  jobBlock: {
+    marginTop: 6,
+  },
+  jobTitle: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#111827",
+  },
+  jobMeta: {
+    marginTop: 2,
+    fontSize: 10,
+    color: "#4B5563",
+  },
+  jobHighlights: {
+    marginTop: 4,
+  },
 });
 
 function hasValue(v: string | undefined): boolean {
@@ -341,7 +357,25 @@ export function ResumePdfDocument({ draft }: Props) {
         {draft.sections.experience.length ? (
           <View style={styles.section}>
             <SectionHeading title={labels.experience} />
-            <BulletList items={draft.sections.experience} />
+            <View style={{ gap: 6 }}>
+              {draft.sections.experience.map((job, idx) => {
+                const meta = [job.company, job.location, job.dates]
+                  .map((x) => x.trim())
+                  .filter(Boolean)
+                  .join(" | ");
+                return (
+                  <View key={`job-${idx}-${job.title}-${meta}`} style={styles.jobBlock}>
+                    {hasValue(job.title) ? <Text style={styles.jobTitle}>{job.title}</Text> : null}
+                    {meta ? <Text style={styles.jobMeta}>{meta}</Text> : null}
+                    {job.highlights.length ? (
+                      <View style={styles.jobHighlights}>
+                        <BulletList items={job.highlights} />
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
           </View>
         ) : null}
 

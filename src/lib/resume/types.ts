@@ -12,10 +12,18 @@ export interface ResumeHeader {
   portfolio?: string;
 }
 
+export interface ExperienceJob {
+  title: string;
+  company: string;
+  location: string;
+  dates: string;
+  highlights: string[];
+}
+
 export interface ResumeSections {
   summary: string;
   skills: string[];
-  experience: string[];
+  experience: ExperienceJob[];
   projects: string[];
   education: string[];
   certificates: string[];

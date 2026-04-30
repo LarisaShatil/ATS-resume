@@ -264,11 +264,29 @@ export function ResumePreview({ labels, draft }: Props) {
 
         {draft.sections.experience.length ? (
           <PreviewSection title={labels.experience}>
-            <ul className="list-disc space-y-1 pl-5">
-              {draft.sections.experience.map((x, idx) => (
-                <li key={`${idx}-${x}`}>{x}</li>
-              ))}
-            </ul>
+            <div className="grid gap-4">
+              {draft.sections.experience.map((job, idx) => {
+                const metaParts = [job.company, job.location, job.dates]
+                  .map((x) => x.trim())
+                  .filter(Boolean);
+                const meta = metaParts.join(" | ");
+                return (
+                  <section key={`${idx}-${job.title}-${meta}`} className="break-inside-avoid">
+                    {hasValue(job.title) ? (
+                      <div className="text-sm font-semibold text-slate-900">{job.title}</div>
+                    ) : null}
+                    {meta ? <div className="mt-0.5 text-xs text-slate-600">{meta}</div> : null}
+                    {job.highlights.length ? (
+                      <ul className="mt-2 list-disc space-y-1 pl-5">
+                        {job.highlights.map((x, hIdx) => (
+                          <li key={`${idx}-${hIdx}-${x}`}>{x}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </section>
+                );
+              })}
+            </div>
           </PreviewSection>
         ) : null}
 
