@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { normalizeBodySectionsOrder } from "@/lib/resume/body-section-order";
 import { formatResumeLanguageLine } from "@/lib/resume/language-levels";
@@ -27,6 +27,7 @@ const ResumePdfDownloadButton = dynamic(
 type Props = {
   labels: ResumeLabels;
   draft: ResumeDraft;
+  activeSectionId?: "summary" | ResumeBodySectionId;
 };
 
 function hasValue(v: string | undefined): boolean {
@@ -42,6 +43,14 @@ function slugifyFilePart(input: string): string {
   return s || "draft";
 }
 
+function fileNamePart(input: string): string {
+  const s = input
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/(^_+|_+$)+/g, "");
+  return s || "Draft";
+}
+
 function PreviewSection({
   title,
   children,
@@ -50,27 +59,28 @@ function PreviewSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-8">
+    <section className="mt-6">
       <div className="flex items-center gap-3">
         <h3 className="text-lg font-medium tracking-tight text-slate-700">
           {title}
         </h3>
         <div className="h-px flex-1 bg-slate-200" />
       </div>
-      <div className="mt-3 text-sm leading-6 text-slate-800">{children}</div>
+      <div className="mt-3 text-sm leading-[1.15] text-slate-800">{children}</div>
     </section>
   );
 }
 
 /** Flex bullets so wrapped lines align with body text, not the marker column. */
 function PreviewBulletList({ items }: { items: string[] }) {
-  if (!items.length) return null;
+  const cleaned = items.map((s) => s.trim()).filter(Boolean);
+  if (!cleaned.length) return null;
   return (
-    <ul className="list-none space-y-1.5">
-      {items.map((text, idx) => (
+    <ul className="list-none space-y-1">
+      {cleaned.map((text, idx) => (
         <li
           key={`bullet-${idx}-${text.slice(0, 32)}`}
-          className="flex gap-2.5 text-sm leading-6 text-slate-800"
+          className="flex gap-2.5 text-sm leading-[1.15] text-slate-800"
         >
           <span
             className="mt-[0.35em] w-[0.7em] shrink-0 text-center text-[0.95em] leading-none text-slate-700"
@@ -162,8 +172,13 @@ function ContactIcon({
   );
 }
 
-export function ResumePreview({ labels, draft }: Props) {
+export function ResumePreview({ labels, draft, activeSectionId }: Props) {
   const h = draft.header;
+  const [pdfVariant, setPdfVariant] = useState<"ats" | "recruiter">("ats");
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const sectionAnchorsRef = useRef<Map<"summary" | ResumeBodySectionId, HTMLDivElement | null>>(
+    new Map(),
+  );
 
   const showPhoto = draft.showPhoto && hasValue(h.photoUrl);
   const showLinkedIn = draft.showLinkedIn && hasValue(h.linkedIn);
@@ -203,57 +218,76 @@ export function ResumePreview({ labels, draft }: Props) {
   const contactLeft = contactEntries.slice(0, mid);
   const contactRight = contactEntries.slice(mid);
 
-  const fileName = `resume-${slugifyFilePart(h.fullName || "")}.pdf`;
+  const fullNamePart = fileNamePart(h.fullName || "");
+  const titlePart = fileNamePart(h.title || "");
+  const fileName =
+    titlePart && titlePart !== "Draft"
+      ? `${fullNamePart}_${titlePart}_Resume.pdf`
+      : `${fullNamePart}_Resume.pdf`;
   const sectionsOrder = normalizeBodySectionsOrder(draft.sectionsOrder);
+
+  function setSectionAnchor(id: "summary" | ResumeBodySectionId) {
+    return (el: HTMLDivElement | null) => {
+      sectionAnchorsRef.current.set(id, el);
+    };
+  }
+
+  function isFullyVisible(container: HTMLDivElement, el: HTMLElement): boolean {
+    const top = el.offsetTop;
+    const bottom = top + el.offsetHeight;
+    const viewTop = container.scrollTop;
+    const viewBottom = viewTop + container.clientHeight;
+    return top >= viewTop && bottom <= viewBottom;
+  }
 
   function previewBodySection(id: ResumeBodySectionId) {
     switch (id) {
       case "skills":
         return draft.sections.skills.length ? (
-          <PreviewSection title={labels.skills}>
-            <PreviewBulletList items={draft.sections.skills} />
-          </PreviewSection>
+          <div ref={setSectionAnchor("skills")} data-section-id="skills">
+            <PreviewSection title={labels.skills}>
+              <PreviewBulletList items={draft.sections.skills} />
+            </PreviewSection>
+          </div>
         ) : null;
       case "experience":
         return draft.sections.experience.length ? (
-          <PreviewSection title={labels.experience}>
-            <div className="grid gap-5">
-              {draft.sections.experience.map((job, idx) => {
-                const metaParts = [job.company, job.location, job.dates]
-                  .map((x) => x.trim())
-                  .filter(Boolean);
-                const meta = metaParts.join(" | ");
-                return (
-                  <section
-                    key={`${idx}-${job.title}-${meta}`}
-                    className="break-inside-avoid"
-                  >
-                    {hasValue(job.title) ? (
-                      <div className="text-sm font-semibold text-slate-900">
-                        {job.title}
-                      </div>
-                    ) : null}
-                    {meta ? (
-                      <div className="mt-0.5 text-xs text-slate-600">
-                        {meta}
-                      </div>
-                    ) : null}
-                    {job.highlights.length ? (
-                      <div className="mt-2">
-                        <PreviewBulletList items={job.highlights} />
-                      </div>
-                    ) : null}
-                  </section>
-                );
-              })}
-            </div>
-          </PreviewSection>
+          <div ref={setSectionAnchor("experience")} data-section-id="experience">
+            <PreviewSection title={labels.experience}>
+              <div className="grid gap-4">
+                {draft.sections.experience.map((job, idx) => {
+                  const metaParts = [job.company, job.location, job.dates]
+                    .map((x) => x.trim())
+                    .filter(Boolean);
+                  const meta = metaParts.join(" | ");
+                  const highlights = (job.highlights ?? [])
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+                  return (
+                    <section key={`${idx}-${job.title}-${meta}`} className="break-inside-avoid">
+                      {hasValue(job.title) ? (
+                        <div className="text-sm font-semibold text-slate-900">{job.title}</div>
+                      ) : null}
+                      {meta ? <div className="mt-0.5 text-xs text-slate-600">{meta}</div> : null}
+                      {highlights.length ? (
+                        <div className="mt-2">
+                          <PreviewBulletList items={highlights} />
+                        </div>
+                      ) : null}
+                    </section>
+                  );
+                })}
+              </div>
+            </PreviewSection>
+          </div>
         ) : null;
       case "projects":
         return draft.showProjects && draft.sections.projects.length ? (
-          <PreviewSection title={labels.projects}>
-            <PreviewBulletList items={draft.sections.projects} />
-          </PreviewSection>
+          <div ref={setSectionAnchor("projects")} data-section-id="projects">
+            <PreviewSection title={labels.projects}>
+              <PreviewBulletList items={draft.sections.projects} />
+            </PreviewSection>
+          </div>
         ) : null;
       case "education": {
         const educationItems = (draft.sections.education ?? []).filter((e) =>
@@ -263,87 +297,145 @@ export function ResumePreview({ labels, draft }: Props) {
         );
         if (!educationItems.length) return null;
         return (
-          <PreviewSection title={labels.education}>
-            <div className="grid gap-5">
-              {educationItems.map((e, idx) => {
-                const metaParts = [e.institution, e.location, e.dates]
-                  .map((x) => x.trim())
-                  .filter(Boolean);
-                const meta = metaParts.join(" | ");
-                return (
-                  <section
-                    key={`${idx}-${e.clientKey ?? e.degree}-${meta}`}
-                    className="break-inside-avoid"
-                  >
-                    {hasValue(e.degree) ? (
-                      <div className="text-sm font-semibold text-slate-900">{e.degree}</div>
-                    ) : null}
-                    {meta ? (
-                      <div className="mt-0.5 text-xs text-slate-600">{meta}</div>
-                    ) : null}
-                    {hasValue(e.coursework) ? (
-                      <div className="mt-2 text-sm text-slate-800">
-                        {labels.educationCoursework}: {e.coursework.trim()}
-                      </div>
-                    ) : null}
-                    {hasValue(e.honors) ? (
-                      <div
-                        className={[
-                          "text-sm text-slate-800",
-                          hasValue(e.coursework) ? "mt-1" : "mt-2",
-                        ].join(" ")}
-                      >
-                        {labels.educationHonors}: {e.honors.trim()}
-                      </div>
-                    ) : null}
-                  </section>
-                );
-              })}
-            </div>
-          </PreviewSection>
+          <div ref={setSectionAnchor("education")} data-section-id="education">
+            <PreviewSection title={labels.education}>
+              <div className="grid gap-5">
+                {educationItems.map((e, idx) => {
+                  const metaParts = [e.institution, e.location, e.dates]
+                    .map((x) => x.trim())
+                    .filter(Boolean);
+                  const meta = metaParts.join(" | ");
+                  return (
+                    <section key={`${idx}-${e.clientKey ?? e.degree}-${meta}`} className="break-inside-avoid">
+                      {hasValue(e.degree) ? (
+                        <div className="text-sm font-semibold text-slate-900">{e.degree}</div>
+                      ) : null}
+                      {meta ? <div className="mt-0.5 text-xs text-slate-600">{meta}</div> : null}
+                      {hasValue(e.coursework) ? (
+                        <div className="mt-2 text-sm text-slate-800">
+                          {labels.educationCoursework}: {e.coursework.trim()}
+                        </div>
+                      ) : null}
+                      {hasValue(e.honors) ? (
+                        <div
+                          className={[
+                            "text-sm text-slate-800",
+                            hasValue(e.coursework) ? "mt-1" : "mt-2",
+                          ].join(" ")}
+                        >
+                          {labels.educationHonors}: {e.honors.trim()}
+                        </div>
+                      ) : null}
+                    </section>
+                  );
+                })}
+              </div>
+            </PreviewSection>
+          </div>
         );
       }
       case "languages":
         return (draft.sections.languages ?? []).some((l) => l.name.trim()) ? (
-          <PreviewSection title={labels.languages}>
-            <PreviewBulletList
-              items={(draft.sections.languages ?? [])
-                .filter((l) => l.name.trim())
-                .map((l) => formatResumeLanguageLine(draft.language, l.name, l.level))}
-            />
-          </PreviewSection>
+          <div ref={setSectionAnchor("languages")} data-section-id="languages">
+            <PreviewSection title={labels.languages}>
+              <PreviewBulletList
+                items={(draft.sections.languages ?? [])
+                  .filter((l) => l.name.trim())
+                  .map((l) => formatResumeLanguageLine(draft.language, l.name, l.level))}
+              />
+            </PreviewSection>
+          </div>
         ) : null;
       case "certificates":
         return draft.showCertificates && draft.sections.certificates.length ? (
-          <PreviewSection title={labels.certificates}>
-            <PreviewBulletList items={draft.sections.certificates} />
-          </PreviewSection>
+          <div ref={setSectionAnchor("certificates")} data-section-id="certificates">
+            <PreviewSection title={labels.certificates}>
+              <PreviewBulletList items={draft.sections.certificates} />
+            </PreviewSection>
+          </div>
         ) : null;
       default:
         return null;
     }
   }
 
+  useEffect(() => {
+    if (!activeSectionId) return;
+    const container = scrollContainerRef.current;
+    const anchor = sectionAnchorsRef.current.get(activeSectionId);
+    if (!container || !anchor) return;
+    if (isFullyVisible(container, anchor)) return;
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    container.scrollTo({
+      top: Math.max(0, anchor.offsetTop - 12),
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
+  }, [activeSectionId]);
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {labels.preview}
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4 text-slate-400"
+              aria-hidden="true"
+            >
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <span>{labels.preview}</span>
           </h2>
-          <p className="mt-2 text-xs text-slate-500">
-            ATS-friendly layout (single column, standard headings, bullet
-            lists).
-          </p>
         </div>
-        <ResumePdfDownloadButton
-          labels={labels}
-          draft={draft}
-          fileName={fileName}
-        />
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          <div className="flex flex-wrap items-center justify-end gap-3 text-xs text-slate-700">
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="radio"
+                name="pdf-variant"
+                value="ats"
+                checked={pdfVariant === "ats"}
+                onChange={() => setPdfVariant("ats")}
+                className="h-4 w-4 accent-indigo-600"
+              />
+              <span>ATS version (no icons)</span>
+            </label>
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="radio"
+                name="pdf-variant"
+                value="recruiter"
+                checked={pdfVariant === "recruiter"}
+                onChange={() => setPdfVariant("recruiter")}
+                className="h-4 w-4 accent-indigo-600"
+              />
+              <span>Recruiter version (icons)</span>
+            </label>
+          </div>
+          <ResumePdfDownloadButton
+            labels={labels}
+            draft={draft}
+            fileName={fileName}
+            variant={pdfVariant}
+          />
+        </div>
       </div>
 
-      <div className="mt-5 rounded-xl border border-slate-200 bg-white p-6 sm:p-7">
+      <div
+        ref={scrollContainerRef}
+        className="mt-5 max-h-[calc(100vh-12rem)] overflow-auto rounded-xl border border-slate-200 bg-white p-6 sm:p-7"
+      >
         <div className="mx-auto max-w-[72ch]">
           <header className="flex items-center gap-4">
           {showPhoto ? (
@@ -414,9 +506,11 @@ export function ResumePreview({ labels, draft }: Props) {
         ) : null}
 
         {hasValue(draft.sections.summary) ? (
-          <PreviewSection title={labels.summary}>
-            <p className="whitespace-pre-line">{draft.sections.summary}</p>
-          </PreviewSection>
+          <div ref={setSectionAnchor("summary")} data-section-id="summary">
+            <PreviewSection title={labels.summary}>
+              <p className="whitespace-pre-line">{draft.sections.summary}</p>
+            </PreviewSection>
+          </div>
         ) : null}
 
         {sectionsOrder.map((sectionId) => (

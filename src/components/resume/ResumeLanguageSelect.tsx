@@ -14,7 +14,7 @@ export function ResumeLanguageSelect({ value, onChange }: Props) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as ResumeLanguage)}
-        className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        className="h-7 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
       >
         <option value="en">English</option>
         <option value="uk">Українська</option>

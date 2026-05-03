@@ -45,7 +45,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        className="mt-1 h-7 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
       />
     </label>
   );
@@ -132,9 +132,22 @@ export function ResumeHeaderForm({
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-        {labels.header}
+    <section className="rounded-2xl border border-slate-200 bg-white py-5 pr-5 pl-4 shadow-sm sm:py-6 sm:pr-6 sm:pl-5">
+      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-4 w-4 text-slate-400"
+          aria-hidden="true"
+        >
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+        <span>{labels.header}</span>
       </h2>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -210,7 +223,7 @@ export function ResumeHeaderForm({
               onHeaderChange({ photoUrl: e.target.value });
             }}
             placeholder="https://... (or upload)"
-            className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="mt-1 h-7 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
           />
           {photoMessage ? (
             <div className="mt-2 text-xs text-rose-600">{photoMessage}</div>

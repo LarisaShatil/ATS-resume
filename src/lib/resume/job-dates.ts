@@ -1,5 +1,5 @@
 /**
- * ATS-oriented employment date ranges, e.g. "Jul 15, 2022 – Aug 3, 2023" or "Jul 15, 2022 – Present".
+ * ATS-oriented employment date ranges, e.g. "Aug 2024 – Dec 2026" or "Aug 2024 – Present".
  * Uses an en-dash (U+2013) between parts — common on resumes and easy for parsers.
  */
 
@@ -119,6 +119,16 @@ function toYmd(y: number, mo: number, day: number): string {
   return `${y}-${pad2(mo)}-${pad2(day)}`;
 }
 
+function ymdToYm(ymd: string): string | null {
+  const m = ymd.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const day = Number(m[3]);
+  if (!validYmd(y, mo, day)) return null;
+  return `${y}-${pad2(mo)}`;
+}
+
 /**
  * Parse one side of a range into yyyy-MM-dd.
  * Month-only values use the first or last calendar day of that month (typical for jobs).
@@ -178,6 +188,23 @@ function parseFlexibleDatePart(part: string, monthOnlyPosition: "start" | "end")
 }
 
 /**
+ * Parse one side of a range into yyyy-MM.
+ * Accepts full dates too (they'll be converted to month precision).
+ */
+function parseFlexibleMonthPart(part: string): string | null {
+  const p = part.trim();
+  if (!p) return null;
+
+  const ym = parseYearMonthToken(p);
+  if (ym) return ym;
+
+  const startYmd = parseFlexibleDatePart(p, "start");
+  if (startYmd) return ymdToYm(startYmd);
+
+  return null;
+}
+
+/**
  * Format yyyy-MM-dd as short English month + day + year (e.g. Jul 15, 2026).
  * English labels are intentional for ATS consistency.
  */
@@ -212,20 +239,20 @@ const PRESENT_RE =
   /^(present|currently\s+employed|current|now|нині|зараз|понині|дотепер|наст\.?\s*время|н\.?\s*в\.?|по\s+н\.?\s*в\.?)$/i;
 
 export type StructuredJobDates = {
-  startYmd: string;
-  endYmd: string;
+  startYm: string;
+  endYm: string;
   isPresent: boolean;
 };
 
 export function formatStructuredJobDates(s: StructuredJobDates): string {
-  const start = s.startYmd.trim();
+  const start = s.startYm.trim();
   if (!start) return "";
-  const a = formatResumeYmd(start);
+  const a = formatYearMonth(start);
   if (!a) return "";
   if (s.isPresent) return `${a} ${JOB_DATES_DASH} ${JOB_DATES_PRESENT}`;
-  const end = s.endYmd.trim();
+  const end = s.endYm.trim();
   if (!end) return a;
-  const b = formatResumeYmd(end);
+  const b = formatYearMonth(end);
   if (!b) return a;
   return `${a} ${JOB_DATES_DASH} ${b}`;
 }
@@ -236,27 +263,27 @@ export function formatStructuredJobDates(s: StructuredJobDates): string {
  */
 export function tryParseStructuredJobDates(raw: string): StructuredJobDates | null {
   const s = raw.trim();
-  if (!s) return { startYmd: "", endYmd: "", isPresent: false };
+  if (!s) return { startYm: "", endYm: "", isPresent: false };
 
   const splitRe = /\s*[–—−\-]\s*/;
   const parts = s.split(splitRe).map((p) => p.trim()).filter(Boolean);
 
   if (parts.length === 1) {
-    const ymd = parseFlexibleDatePart(parts[0]!, "start");
-    if (ymd) return { startYmd: ymd, endYmd: "", isPresent: false };
+    const a = parseFlexibleMonthPart(parts[0]!);
+    if (a) return { startYm: a, endYm: "", isPresent: false };
     return null;
   }
 
   if (parts.length >= 2) {
-    const a = parseFlexibleDatePart(parts[0]!, "start");
+    const a = parseFlexibleMonthPart(parts[0]!);
     if (!a) return null;
     const bRaw = parts[1]!;
     if (PRESENT_RE.test(bRaw)) {
-      return { startYmd: a, endYmd: "", isPresent: true };
+      return { startYm: a, endYm: "", isPresent: true };
     }
-    const b = parseFlexibleDatePart(bRaw, "end");
+    const b = parseFlexibleMonthPart(bRaw);
     if (!b) return null;
-    return { startYmd: a, endYmd: b, isPresent: false };
+    return { startYm: a, endYm: b, isPresent: false };
   }
 
   return null;

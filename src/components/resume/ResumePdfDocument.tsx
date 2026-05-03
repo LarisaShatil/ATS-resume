@@ -16,38 +16,39 @@ import { getLabels } from "@/lib/resume/labels";
 
 type Props = {
   draft: ResumeDraft;
+  variant?: "ats" | "recruiter";
 };
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 30,
-    paddingBottom: 30,
-    paddingHorizontal: 52,
-    fontSize: 11,
+    paddingTop: 24,
+    paddingBottom: 24,
+    paddingHorizontal: 32,
+    fontSize: 10.5,
     fontFamily: "Helvetica",
     color: "#111827",
     backgroundColor: "#ffffff",
-    lineHeight: 1.45,
+    lineHeight: 1.25,
   },
   headerRow: {
     flexDirection: "row",
-    gap: 14,
+    gap: 12,
     alignItems: "center",
   },
   photo: {
-    width: 94,
-    height: 94,
+    width: 76,
+    height: 76,
     objectFit: "cover",
     borderRadius: 999,
   },
   name: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: 700,
     lineHeight: 1.1,
   },
   title: {
     marginTop: 2,
-    fontSize: 12,
+    fontSize: 11,
     color: "#374151",
     textTransform: "uppercase",
   },
@@ -57,24 +58,24 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   contactIcon: {
-    width: 14,
-    height: 14,
+    width: 12,
+    height: 12,
   },
   contactText: {
-    fontSize: 10,
+    fontSize: 9.5,
     color: "#374151",
   },
   section: {
-    marginTop: 20,
+    marginTop: 11,
   },
   headingRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
+    gap: 6,
+    marginBottom: 6,
   },
   sectionHeading: {
-    fontSize: 11,
+    fontSize: 12.5,
     fontWeight: 700,
     textTransform: "none",
     color: "#111827",
@@ -88,28 +89,28 @@ const styles = StyleSheet.create({
     color: "#111827",
   },
   list: {
-    gap: 4,
+    gap: 3,
   },
   bulletRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 8,
+    gap: 6,
   },
   bullet: {
-    width: 12,
+    width: 8,
     marginTop: 1,
-    fontSize: 11,
-    lineHeight: 1.45,
+    fontSize: 10.5,
+    lineHeight: 1.25,
     textAlign: "center",
     color: "#111827",
   },
   bulletText: {
     flex: 1,
-    lineHeight: 1.45,
+    lineHeight: 1.25,
     color: "#111827",
   },
   jobBlock: {
-    marginTop: 8,
+    marginTop: 6,
   },
   jobTitle: {
     fontSize: 11,
@@ -118,14 +119,23 @@ const styles = StyleSheet.create({
   },
   jobMeta: {
     marginTop: 2,
-    fontSize: 10,
+    fontSize: 9.5,
     color: "#4B5563",
   },
   jobHighlights: {
-    marginTop: 6,
+    marginTop: 3,
   },
   educationBlock: {
-    marginTop: 8,
+    marginTop: 6,
+  },
+  pageNumber: {
+    position: "absolute",
+    bottom: 18,
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    fontSize: 9,
+    color: "#6B7280",
   },
 });
 
@@ -141,8 +151,13 @@ function isSafePdfImageSrc(src: string | undefined): boolean {
   // Avoid mixed-content: embedding http:// images into an https page can break export/download.
   if (s.startsWith("http://")) return false;
 
-  // Allow https, blob URLs (uploaded images), and same-origin relative paths.
-  return s.startsWith("https://") || s.startsWith("blob:") || s.startsWith("/");
+  // Allow https, base64 data URLs (uploaded images), blob URLs, and same-origin relative paths.
+  return (
+    s.startsWith("https://") ||
+    s.startsWith("data:image/") ||
+    s.startsWith("blob:") ||
+    s.startsWith("/")
+  );
 }
 
 type ContactKind =
@@ -285,20 +300,27 @@ function PdfContactIcon({ kind }: { kind: ContactKind }) {
   );
 }
 
-function PdfContactLine({ entry }: { entry: ContactEntry }) {
+function PdfContactLine({
+  entry,
+  variant,
+}: {
+  entry: ContactEntry;
+  variant: "ats" | "recruiter";
+}) {
   return (
     <View style={styles.contactRow}>
-      <PdfContactIcon kind={entry.kind} />
+      {variant === "recruiter" ? <PdfContactIcon kind={entry.kind} /> : null}
       <Text style={styles.contactText}>{entry.text}</Text>
     </View>
   );
 }
 
 function BulletList({ items }: { items: string[] }) {
-  if (!items.length) return null;
+  const cleaned = items.map((s) => s.trim()).filter(Boolean);
+  if (!cleaned.length) return null;
   return (
     <View style={styles.list}>
-      {items.map((item, idx) => (
+      {cleaned.map((item, idx) => (
         <View key={`${idx}-${item}`} style={styles.bulletRow}>
           <Text style={styles.bullet}>•</Text>
           <Text style={styles.bulletText}>{item}</Text>
@@ -317,7 +339,7 @@ function SectionHeading({ title }: { title: string }) {
   );
 }
 
-export function ResumePdfDocument({ draft }: Props) {
+export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
   const labels = getLabels(draft.language);
   const h = draft.header;
 
@@ -357,14 +379,14 @@ export function ResumePdfDocument({ draft }: Props) {
     switch (id) {
       case "skills":
         return draft.sections.skills.length ? (
-          <View style={styles.section}>
+          <View style={styles.section} minPresenceAhead={110}>
             <SectionHeading title={labels.skills} />
             <BulletList items={draft.sections.skills} />
           </View>
         ) : null;
       case "experience":
         return draft.sections.experience.length ? (
-          <View style={styles.section}>
+          <View style={styles.section} minPresenceAhead={140}>
             <SectionHeading title={labels.experience} />
             <View style={{ gap: 6 }}>
               {draft.sections.experience.map((job, idx) => {
@@ -372,6 +394,9 @@ export function ResumePdfDocument({ draft }: Props) {
                   .map((x) => x.trim())
                   .filter(Boolean)
                   .join(" | ");
+                const highlights = (job.highlights ?? [])
+                  .map((s) => s.trim())
+                  .filter(Boolean);
                 return (
                   <View
                     key={`job-${idx}-${job.title}-${meta}`}
@@ -381,9 +406,9 @@ export function ResumePdfDocument({ draft }: Props) {
                       <Text style={styles.jobTitle}>{job.title}</Text>
                     ) : null}
                     {meta ? <Text style={styles.jobMeta}>{meta}</Text> : null}
-                    {job.highlights.length ? (
+                    {highlights.length ? (
                       <View style={styles.jobHighlights}>
-                        <BulletList items={job.highlights} />
+                        <BulletList items={highlights} />
                       </View>
                     ) : null}
                   </View>
@@ -394,7 +419,7 @@ export function ResumePdfDocument({ draft }: Props) {
         ) : null;
       case "projects":
         return draft.showProjects && draft.sections.projects.length ? (
-          <View style={styles.section}>
+          <View style={styles.section} minPresenceAhead={110}>
             <SectionHeading title={labels.projects} />
             <BulletList items={draft.sections.projects} />
           </View>
@@ -407,7 +432,7 @@ export function ResumePdfDocument({ draft }: Props) {
         );
         if (!educationItems.length) return null;
         return (
-          <View style={styles.section}>
+          <View style={styles.section} minPresenceAhead={140}>
             <SectionHeading title={labels.education} />
             <View style={{ gap: 0 }}>
               {educationItems.map((e, idx) => {
@@ -451,7 +476,7 @@ export function ResumePdfDocument({ draft }: Props) {
       }
       case "languages":
         return (draft.sections.languages ?? []).some((l) => l.name.trim()) ? (
-          <View style={styles.section}>
+          <View style={styles.section} minPresenceAhead={110}>
             <SectionHeading title={labels.languages} />
             <BulletList
               items={(draft.sections.languages ?? [])
@@ -462,7 +487,7 @@ export function ResumePdfDocument({ draft }: Props) {
         ) : null;
       case "certificates":
         return draft.showCertificates && draft.sections.certificates.length ? (
-          <View style={styles.section}>
+          <View style={styles.section} minPresenceAhead={110}>
             <SectionHeading title={labels.certificates} />
             <BulletList items={draft.sections.certificates} />
           </View>
@@ -488,7 +513,7 @@ export function ResumePdfDocument({ draft }: Props) {
         </View>
 
         {contactEntries.length ? (
-          <View style={styles.section}>
+          <View style={styles.section} minPresenceAhead={130}>
             <SectionHeading title={labels.contacts} />
             <View style={{ flexDirection: "row", gap: 18 }}>
               <View style={{ flex: 1, gap: 4 }}>
@@ -496,6 +521,7 @@ export function ResumePdfDocument({ draft }: Props) {
                   <PdfContactLine
                     key={`l-${idx}-${entry.kind}-${entry.text}`}
                     entry={entry}
+                    variant={variant}
                   />
                 ))}
               </View>
@@ -504,6 +530,7 @@ export function ResumePdfDocument({ draft }: Props) {
                   <PdfContactLine
                     key={`r-${idx}-${entry.kind}-${entry.text}`}
                     entry={entry}
+                    variant={variant}
                   />
                 ))}
               </View>
@@ -512,7 +539,7 @@ export function ResumePdfDocument({ draft }: Props) {
         ) : null}
 
         {hasValue(draft.sections.summary) ? (
-          <View style={styles.section}>
+          <View style={styles.section} minPresenceAhead={140}>
             <SectionHeading title={labels.summary} />
             <Text style={styles.paragraph}>{draft.sections.summary}</Text>
           </View>
@@ -521,6 +548,14 @@ export function ResumePdfDocument({ draft }: Props) {
         {sectionsOrder.map((sectionId) => (
           <Fragment key={sectionId}>{pdfBodySection(sectionId)}</Fragment>
         ))}
+
+        <Text
+          style={styles.pageNumber}
+          fixed
+          render={({ pageNumber, totalPages }) =>
+            totalPages > 1 ? `Page ${pageNumber} of ${totalPages}` : ""
+          }
+        />
       </Page>
     </Document>
   );

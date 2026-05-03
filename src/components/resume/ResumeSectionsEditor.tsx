@@ -75,6 +75,7 @@ type Props = {
     showProjects?: boolean;
     showCertificates?: boolean;
   }) => void;
+  onActiveSectionChange?: (id: "summary" | ResumeBodySectionId) => void;
 };
 
 function arrayToLines(items: string[]): string {
@@ -82,10 +83,13 @@ function arrayToLines(items: string[]): string {
 }
 
 function linesToArray(text: string): string[] {
-  return text
-    .split(/\r?\n/g)
-    .map((l) => l.trim())
-    .filter(Boolean);
+  const lines = text.split(/\r?\n/g);
+  return lines.filter((line, idx) => {
+    // Keep the last line as-is so Enter/Space works naturally while typing.
+    // Earlier empty lines are dropped to avoid accumulating blank bullets in state.
+    if (idx === lines.length - 1) return true;
+    return line.trim().length > 0;
+  });
 }
 
 function TextArea({
@@ -103,13 +107,13 @@ function TextArea({
 }) {
   return (
     <label className="block">
-      <div className="text-xs font-medium text-slate-600">{label}</div>
+      {label ? <div className="text-xs font-medium text-slate-600">{label}</div> : null}
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
         placeholder={placeholder}
-        className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
       />
     </label>
   );
@@ -156,7 +160,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        className="mt-1 h-7 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
       />
     </label>
   );
@@ -216,7 +220,7 @@ function DragGripHandle({
       {...listeners}
       {...attributes}
       className={[
-        "flex h-9 w-8 shrink-0 touch-none cursor-grab items-center justify-center self-start rounded-md border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+        "flex shrink-0 touch-none cursor-grab items-center justify-center self-start rounded-md border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
         className,
       ].join(" ")}
       title={title}
@@ -513,7 +517,7 @@ function SortableBodySectionRow({
   children,
 }: {
   id: ResumeBodySectionId;
-  children: ReactNode;
+  children: (dragHandle: ReactNode) => ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
@@ -522,22 +526,27 @@ function SortableBodySectionRow({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const dragHandle = (
+    <DragGripHandle
+      listeners={listeners}
+      attributes={attributes}
+      title="Drag to reorder section"
+      ariaLabel="Drag to reorder section"
+      className="h-6 w-6"
+    />
+  );
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={[
-        "flex gap-3 rounded-lg transition-opacity",
+        "rounded-lg transition-opacity",
         isDragging ? "z-10 opacity-80 ring-2 ring-indigo-400/50" : "",
       ].join(" ")}
     >
-      <DragGripHandle
-        listeners={listeners}
-        attributes={attributes}
-        title="Drag to reorder section"
-        ariaLabel="Drag to reorder section"
-      />
-      <div className="min-w-0 flex-1">{children}</div>
+      {children(dragHandle)}
     </div>
   );
 }
@@ -596,7 +605,7 @@ function LanguageRowContent({
               }
               patchLanguageRow(idx, { name: v, useCustomName: false });
             }}
-            className="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="h-7 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
           >
             <option value="">{labels.languageSelectHint}</option>
             {spokenNameOptions.map((o) => (
@@ -612,7 +621,7 @@ function LanguageRowContent({
               value={row.name}
               onChange={(e) => patchLanguageRow(idx, { name: e.target.value })}
               placeholder={labels.languageCustomPlaceholder}
-              className="mt-2 h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+              className="mt-2 h-7 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
             />
           ) : null}
         </div>
@@ -624,7 +633,7 @@ function LanguageRowContent({
             value={row.level}
             onChange={(e) => patchLanguageRow(idx, { level: e.target.value })}
             title={proficiencyOptions.find((o) => o.value === row.level)?.label}
-            className="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="h-7 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
           >
             {proficiencyOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -700,6 +709,7 @@ export function ResumeSectionsEditor({
   onSectionsChange,
   onSectionsOrderChange,
   onVisibilityChange,
+  onActiveSectionChange,
 }: Props) {
   const jobs = useMemo(() => sections.experience ?? [], [sections.experience]);
   const education = useMemo(() => sections.education ?? [], [sections.education]);
@@ -915,20 +925,37 @@ export function ResumeSectionsEditor({
     onSectionsOrderChange(arrayMove(sectionsOrder, oldIndex, newIndex));
   }
 
-  const skillsEditor = (
-    <TextArea
-      label={labels.skills}
-      value={arrayToLines(sections.skills)}
-      onChange={(v) => onSectionsChange({ skills: linesToArray(v) })}
-      rows={5}
-      placeholder={"Backend: Node.js, Express, Deno\nTesting: Jest, Vitest,"}
-    />
+  const skillsEditor = (dragHandle: ReactNode) => (
+    <div
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      onFocusCapture={() => onActiveSectionChange?.("skills")}
+    >
+      <div className="flex items-center gap-1.5">
+        {dragHandle}
+        <div className="text-xs font-medium text-slate-600">{labels.skills}</div>
+      </div>
+      <div className="mt-2">
+        <TextArea
+          label=""
+          value={arrayToLines(sections.skills)}
+          onChange={(v) => onSectionsChange({ skills: linesToArray(v) })}
+          rows={5}
+          placeholder={"Backend: Node.js, Express, Deno\nTesting: Jest, Vitest,"}
+        />
+      </div>
+    </div>
   );
 
-  const experienceEditor = (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+  const experienceEditor = (dragHandle: ReactNode) => (
+    <div
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      onFocusCapture={() => onActiveSectionChange?.("experience")}
+    >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-xs font-medium text-slate-600">{labels.experience}</div>
+        <div className="flex items-center gap-1.5">
+          {dragHandle}
+          <div className="text-xs font-medium text-slate-600">{labels.experience}</div>
+        </div>
         <button
           type="button"
           onClick={() =>
@@ -942,7 +969,7 @@ export function ResumeSectionsEditor({
         </button>
       </div>
 
-      <div className="mt-3 grid gap-4">
+      <div className="mt-2 grid gap-3">
         {sortableReady ? (
           <DndContext sensors={jobSensors} collisionDetection={closestCenter} onDragEnd={onJobDragEnd}>
             <SortableContext
@@ -980,20 +1007,37 @@ export function ResumeSectionsEditor({
     </div>
   );
 
-  const projectsEditor = (
-    <TextArea
-      label={labels.projects}
-      value={arrayToLines(sections.projects)}
-      onChange={(v) => onSectionsChange({ projects: linesToArray(v) })}
-      rows={6}
-      placeholder="One bullet per line (e.g., Built an internal tool that reduced onboarding time by 30%)."
-    />
+  const projectsEditor = (dragHandle: ReactNode) => (
+    <div
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      onFocusCapture={() => onActiveSectionChange?.("projects")}
+    >
+      <div className="flex items-center gap-1.5">
+        {dragHandle}
+        <div className="text-xs font-medium text-slate-600">{labels.projects}</div>
+      </div>
+      <div className="mt-2">
+        <TextArea
+          label=""
+          value={arrayToLines(sections.projects)}
+          onChange={(v) => onSectionsChange({ projects: linesToArray(v) })}
+          rows={6}
+          placeholder="One bullet per line (e.g., Built an internal tool that reduced onboarding time by 30%)."
+        />
+      </div>
+    </div>
   );
 
-  const educationEditor = (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+  const educationEditor = (dragHandle: ReactNode) => (
+    <div
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      onFocusCapture={() => onActiveSectionChange?.("education")}
+    >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-xs font-medium text-slate-600">{labels.education}</div>
+        <div className="flex items-center gap-1.5">
+          {dragHandle}
+          <div className="text-xs font-medium text-slate-600">{labels.education}</div>
+        </div>
         <button
           type="button"
           onClick={() =>
@@ -1008,7 +1052,7 @@ export function ResumeSectionsEditor({
       </div>
       <p className="mt-2 text-xs text-slate-500">{labels.educationOrderHint}</p>
 
-      <div className="mt-3 grid gap-4">
+      <div className="mt-2 grid gap-3">
         {sortableEducationReady ? (
           <DndContext
             sensors={educationSensors}
@@ -1052,10 +1096,16 @@ export function ResumeSectionsEditor({
     </div>
   );
 
-  const languagesEditor = (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+  const languagesEditor = (dragHandle: ReactNode) => (
+    <div
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      onFocusCapture={() => onActiveSectionChange?.("languages")}
+    >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-xs font-medium text-slate-600">{labels.languages}</div>
+        <div className="flex items-center gap-1.5">
+          {dragHandle}
+          <div className="text-xs font-medium text-slate-600">{labels.languages}</div>
+        </div>
         <button
           type="button"
           onClick={() => addLanguageRow()}
@@ -1064,7 +1114,7 @@ export function ResumeSectionsEditor({
           {labels.addLanguage}
         </button>
       </div>
-      <div className="mt-3 space-y-3">
+      <div className="mt-2 space-y-2.5">
         {sortableLanguagesReady ? (
           <DndContext
             sensors={languageSensors}
@@ -1112,17 +1162,28 @@ export function ResumeSectionsEditor({
     </div>
   );
 
-  const certificatesEditor = (
-    <TextArea
-      label={labels.certificates}
-      value={arrayToLines(sections.certificates)}
-      onChange={(v) => onSectionsChange({ certificates: linesToArray(v) })}
-      rows={4}
-      placeholder="One item per line."
-    />
+  const certificatesEditor = (dragHandle: ReactNode) => (
+    <div
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      onFocusCapture={() => onActiveSectionChange?.("certificates")}
+    >
+      <div className="flex items-center gap-1.5">
+        {dragHandle}
+        <div className="text-xs font-medium text-slate-600">{labels.certificates}</div>
+      </div>
+      <div className="mt-2">
+        <TextArea
+          label=""
+          value={arrayToLines(sections.certificates)}
+          onChange={(v) => onSectionsChange({ certificates: linesToArray(v) })}
+          rows={4}
+          placeholder="One item per line."
+        />
+      </div>
+    </div>
   );
 
-  const bodySectionEditors: Record<ResumeBodySectionId, ReactNode> = {
+  const bodySectionEditors: Record<ResumeBodySectionId, (dragHandle: ReactNode) => ReactNode> = {
     skills: skillsEditor,
     experience: experienceEditor,
     projects: projectsEditor,
@@ -1132,10 +1193,27 @@ export function ResumeSectionsEditor({
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <section className="rounded-2xl border border-slate-200 bg-white py-5 pr-5 pl-4 shadow-sm sm:py-6 sm:pr-6 sm:pl-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          {labels.sections}
+        <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4 text-slate-400"
+            aria-hidden="true"
+          >
+            <path d="M8 6h13" />
+            <path d="M8 12h13" />
+            <path d="M8 18h13" />
+            <path d="M3 6h.01" />
+            <path d="M3 12h.01" />
+            <path d="M3 18h.01" />
+          </svg>
+          <span>{labels.sections}</span>
         </h2>
         <div className="flex flex-wrap gap-4">
           <Toggle
@@ -1152,14 +1230,15 @@ export function ResumeSectionsEditor({
       </div>
 
       <div className="mt-4 grid gap-4">
-        <TextArea
-          label={labels.summary}
-          value={sections.summary}
-          onChange={(v) => onSectionsChange({ summary: v })}
-          rows={4}
-          placeholder="2–4 sentences describing your strengths and impact."
-        />
-        <p className="mt-2 text-xs text-slate-500">{labels.sectionReorderHint}</p>
+        <div onFocusCapture={() => onActiveSectionChange?.("summary")}>
+          <TextArea
+            label={labels.summary}
+            value={sections.summary}
+            onChange={(v) => onSectionsChange({ summary: v })}
+            rows={4}
+            placeholder="2–4 sentences describing your strengths and impact."
+          />
+        </div>
         <DndContext
           sensors={sectionSensors}
           collisionDetection={closestCenter}

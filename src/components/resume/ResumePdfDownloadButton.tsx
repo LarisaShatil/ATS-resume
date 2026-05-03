@@ -10,9 +10,10 @@ type Props = {
   labels: ResumeLabels;
   draft: ResumeDraft;
   fileName: string;
+  variant: "ats" | "recruiter";
 };
 
-export function ResumePdfDownloadButton({ labels, draft, fileName }: Props) {
+export function ResumePdfDownloadButton({ labels, draft, fileName, variant }: Props) {
   const [loading, setLoading] = useState(false);
 
   const onDownload = useCallback(async () => {
@@ -32,7 +33,9 @@ export function ResumePdfDownloadButton({ labels, draft, fileName }: Props) {
 
     setLoading(true);
     try {
-      const blob = await pdf(<ResumePdfDocument draft={draft} />).toBlob();
+      const blob = await pdf(
+        <ResumePdfDocument draft={draft} variant={variant} />,
+      ).toBlob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -49,7 +52,7 @@ export function ResumePdfDownloadButton({ labels, draft, fileName }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [draft, fileName, loading]);
+  }, [draft, fileName, loading, variant]);
 
   return (
     <button

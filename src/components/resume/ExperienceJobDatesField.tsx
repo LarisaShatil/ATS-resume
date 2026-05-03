@@ -9,7 +9,7 @@ import {
 import type { ResumeLanguage } from "@/lib/resume/types";
 
 const inputClass =
-  "mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500";
+  "mt-1 h-7 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500";
 
 const UI: Record<
   ResumeLanguage,
@@ -21,21 +21,21 @@ const UI: Record<
   }
 > = {
   en: {
-    start: "Start (day / month / year)",
-    end: "End (day / month / year)",
+    start: "Start (month / year)",
+    end: "End (month / year)",
     present: "Currently in this role",
     customLead:
       "This line is free-form. Use the date fields below to replace it with a standard range.",
   },
   uk: {
-    start: "Початок (день / місяць / рік)",
-    end: "Кінець (день / місяць / рік)",
+    start: "Початок (місяць / рік)",
+    end: "Кінець (місяць / рік)",
     present: "Нині на цій посаді",
     customLead: "Вільний формат. Оберіть дати нижче для стандартного рядка.",
   },
   ru: {
-    start: "Начало (день / месяц / год)",
-    end: "Окончание (день / месяц / год)",
+    start: "Начало (месяц / год)",
+    end: "Окончание (месяц / год)",
     present: "Работаю сейчас",
     customLead: "Свободный формат. Выберите даты ниже для стандартной строки.",
   },
@@ -51,19 +51,19 @@ export function ExperienceJobDatesField({ resumeLanguage, value, onChange }: Pro
   const t = UI[resumeLanguage];
   const structured = useMemo(() => tryParseStructuredJobDates(value), [value]);
   const isCustom = value.trim().length > 0 && structured === null;
-  const hasStart = Boolean(structured && structured.startYmd.trim());
+  const hasStart = Boolean(structured && structured.startYm.trim());
 
   function applyStructured(
-    patch: Partial<{ startYmd: string; endYmd: string; isPresent: boolean }>,
+    patch: Partial<{ startYm: string; endYm: string; isPresent: boolean }>,
   ) {
-    const base = structured ?? { startYmd: "", endYmd: "", isPresent: false };
+    const base = structured ?? { startYm: "", endYm: "", isPresent: false };
     const next: typeof base = {
-      startYmd: patch.startYmd !== undefined ? patch.startYmd : base.startYmd,
-      endYmd: patch.endYmd !== undefined ? patch.endYmd : base.endYmd,
+      startYm: patch.startYm !== undefined ? patch.startYm : base.startYm,
+      endYm: patch.endYm !== undefined ? patch.endYm : base.endYm,
       isPresent: patch.isPresent !== undefined ? patch.isPresent : base.isPresent,
     };
     if (next.isPresent) {
-      next.endYmd = "";
+      next.endYm = "";
     }
     const out = formatStructuredJobDates(next);
     if (!out && value.trim() && tryParseStructuredJobDates(value) === null) {
@@ -81,7 +81,7 @@ export function ExperienceJobDatesField({ resumeLanguage, value, onChange }: Pro
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Jul 15, 2022 – Aug 3, 2023"
+            placeholder="Aug 2024 – Dec 2026"
             className={inputClass}
           />
         </label>
@@ -91,15 +91,15 @@ export function ExperienceJobDatesField({ resumeLanguage, value, onChange }: Pro
         <label className="block min-w-0">
           <div className="text-[11px] font-medium text-slate-600">{t.start}</div>
           <input
-            type="date"
-            value={structured?.startYmd ?? ""}
+            type="month"
+            value={structured?.startYm ?? ""}
             onChange={(e) => {
               const v = e.target.value;
               if (!v) {
                 onChange("");
                 return;
               }
-              applyStructured({ startYmd: v });
+              applyStructured({ startYm: v });
             }}
             className={inputClass}
           />
@@ -107,11 +107,11 @@ export function ExperienceJobDatesField({ resumeLanguage, value, onChange }: Pro
         <label className="block min-w-0">
           <div className="text-[11px] font-medium text-slate-600">{t.end}</div>
           <input
-            type="date"
-            value={structured?.isPresent ? "" : structured?.endYmd ?? ""}
+            type="month"
+            value={structured?.isPresent ? "" : structured?.endYm ?? ""}
             onChange={(e) => {
               const v = e.target.value;
-              applyStructured({ endYmd: v, isPresent: false });
+              applyStructured({ endYm: v, isPresent: false });
             }}
             disabled={Boolean(structured?.isPresent)}
             className={inputClass}
@@ -133,7 +133,7 @@ export function ExperienceJobDatesField({ resumeLanguage, value, onChange }: Pro
             const checked = e.target.checked;
             applyStructured({
               isPresent: checked,
-              endYmd: checked ? "" : structured?.endYmd ?? "",
+              endYm: checked ? "" : structured?.endYm ?? "",
             });
           }}
           className="h-4 w-4 shrink-0 accent-indigo-600 disabled:cursor-not-allowed"

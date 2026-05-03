@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_DRAFT } from "@/lib/resume/types";
-import type { ResumeDraft, ResumeHeader, ResumeLanguage, ResumeSections } from "@/lib/resume/types";
+import type {
+  ResumeBodySectionId,
+  ResumeDraft,
+  ResumeHeader,
+  ResumeLanguage,
+  ResumeSections,
+} from "@/lib/resume/types";
 import { getLabels } from "@/lib/resume/labels";
 import { loadDraft, resetDraft, saveDraft } from "@/lib/resume/storage";
 import { parseSourceText } from "@/lib/resume/parser";
@@ -12,9 +18,12 @@ import { ResumePreview } from "./ResumePreview";
 import { ResumeSectionsEditor } from "./ResumeSectionsEditor";
 import { ResumeSourceInput } from "./ResumeSourceInput";
 
+type ActiveSectionId = "summary" | ResumeBodySectionId;
+
 export function ResumeGeneratorScreen() {
   const [draft, setDraft] = useState<ResumeDraft>(DEFAULT_DRAFT);
   const [sourceMessage, setSourceMessage] = useState<string | null>(null);
+  const [activeSectionId, setActiveSectionId] = useState<ActiveSectionId>("summary");
   const skipFirstSaveRef = useRef(true);
 
   const labels = useMemo(() => getLabels(draft.language), [draft.language]);
@@ -70,7 +79,7 @@ export function ResumeGeneratorScreen() {
             {labels.appTitle}
           </div>
           <div className="mt-1 text-sm text-slate-600">
-            Paste text → generate sections → edit → preview → download PDF.
+            ATS-friendly layout (single column, standard headings, bullet lists).
           </div>
         </div>
 
@@ -112,6 +121,7 @@ export function ResumeGeneratorScreen() {
             onSectionsChange={patchSections}
             onSectionsOrderChange={(sectionsOrder) => patchDraft({ sectionsOrder })}
             onVisibilityChange={(patch) => patchDraft(patch)}
+            onActiveSectionChange={setActiveSectionId}
           />
 
           <ResumeSourceInput
@@ -125,7 +135,7 @@ export function ResumeGeneratorScreen() {
         </div>
 
         <div className="lg:sticky lg:top-6 lg:self-start">
-          <ResumePreview labels={labels} draft={draft} />
+          <ResumePreview labels={labels} draft={draft} activeSectionId={activeSectionId} />
           <p className="mt-3 text-xs text-slate-500">
             Note: PDF export works even if you never click “Generate” — you can
             edit all sections manually.
