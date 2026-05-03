@@ -23,7 +23,8 @@ type ActiveSectionId = "summary" | ResumeBodySectionId;
 export function ResumeGeneratorScreen() {
   const [draft, setDraft] = useState<ResumeDraft>(DEFAULT_DRAFT);
   const [sourceMessage, setSourceMessage] = useState<string | null>(null);
-  const [activeSectionId, setActiveSectionId] = useState<ActiveSectionId>("summary");
+  const [activeSectionId, setActiveSectionId] =
+    useState<ActiveSectionId>("summary");
   const skipFirstSaveRef = useRef(true);
 
   const labels = useMemo(() => getLabels(draft.language), [draft.language]);
@@ -57,7 +58,9 @@ export function ResumeGeneratorScreen() {
 
   function onGenerateFromText() {
     if (!draft.sourceText.trim()) {
-      setSourceMessage("Please paste your career text first, then generate sections.");
+      setSourceMessage(
+        "Please paste your career text first, then generate sections.",
+      );
       return;
     }
     setSourceMessage(null);
@@ -79,7 +82,8 @@ export function ResumeGeneratorScreen() {
             {labels.appTitle}
           </div>
           <div className="mt-1 text-sm text-slate-600">
-            ATS-friendly layout (single column, standard headings, bullet lists).
+            ATS-friendly layout (single column, standard headings, bullet
+            lists).
           </div>
         </div>
 
@@ -116,10 +120,14 @@ export function ResumeGeneratorScreen() {
             resumeLanguage={draft.language}
             sections={draft.sections}
             sectionsOrder={draft.sectionsOrder}
+            skillsHeadingVariant={draft.skillsHeadingVariant}
             showProjects={draft.showProjects}
             showCertificates={draft.showCertificates}
             onSectionsChange={patchSections}
-            onSectionsOrderChange={(sectionsOrder) => patchDraft({ sectionsOrder })}
+            onSectionsOrderChange={(sectionsOrder) =>
+              patchDraft({ sectionsOrder })
+            }
+            onDraftSettingsChange={(patch) => patchDraft(patch)}
             onVisibilityChange={(patch) => patchDraft(patch)}
             onActiveSectionChange={setActiveSectionId}
           />
@@ -135,7 +143,11 @@ export function ResumeGeneratorScreen() {
         </div>
 
         <div className="lg:sticky lg:top-6 lg:self-start">
-          <ResumePreview labels={labels} draft={draft} activeSectionId={activeSectionId} />
+          <ResumePreview
+            labels={labels}
+            draft={draft}
+            activeSectionId={activeSectionId}
+          />
           <p className="mt-3 text-xs text-slate-500">
             Note: PDF export works even if you never click “Generate” — you can
             edit all sections manually.
@@ -145,4 +157,3 @@ export function ResumeGeneratorScreen() {
     </div>
   );
 }
-

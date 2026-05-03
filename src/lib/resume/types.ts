@@ -43,15 +43,27 @@ export interface SpokenLanguageEntry {
   useCustomName?: boolean;
 }
 
+/** One project block on the resume (ATS-safe plain text on export). */
+export interface ProjectEntry {
+  clientKey?: string;
+  name: string;
+  description: string;
+  tech: string[];
+  link: string;
+  bullets: string[];
+}
+
 export interface ResumeSections {
   summary: string;
   skills: string[];
   experience: ExperienceJob[];
-  projects: string[];
+  projects: ProjectEntry[];
   education: EducationEntry[];
   languages: SpokenLanguageEntry[];
   certificates: string[];
 }
+
+export type SkillsHeadingVariant = "skills" | "technicalSkills";
 
 /** Identifiers for body sections below Professional Summary (order is user-controlled). */
 export type ResumeBodySectionId =
@@ -83,6 +95,9 @@ export interface ResumeDraft {
   sections: ResumeSections;
   /** Order of sections under Professional Summary in preview, PDF, and editor. */
   sectionsOrder: ResumeBodySectionId[];
+
+  /** Controls the visible heading for the Skills section. */
+  skillsHeadingVariant: SkillsHeadingVariant;
 
   showPhoto: boolean;
   showProjects: boolean;
@@ -118,6 +133,7 @@ export const DEFAULT_DRAFT: ResumeDraft = {
     languages: [],
     certificates: [],
   },
+  skillsHeadingVariant: "skills",
   showPhoto: false,
   showProjects: true,
   showCertificates: true,
@@ -126,4 +142,3 @@ export const DEFAULT_DRAFT: ResumeDraft = {
   showPortfolio: true,
   sectionsOrder: defaultResumeBodySectionsOrder(),
 };
-

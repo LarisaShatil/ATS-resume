@@ -4,7 +4,12 @@ import { normalizeBodySectionsOrder } from "./body-section-order";
 import { DEFAULT_DRAFT, STORAGE_KEY } from "./types";
 import type { ResumeDraft } from "./types";
 import { isPresetSpokenLanguageName } from "./spoken-language-presets";
-import type { EducationEntry, ExperienceJob, SpokenLanguageEntry } from "./types";
+import type {
+  EducationEntry,
+  ExperienceJob,
+  ProjectEntry,
+  SpokenLanguageEntry,
+} from "./types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -64,6 +69,81 @@ function normalizeExperience(value: unknown): ExperienceJob[] {
   }));
 }
 
+function uniqTechStrings(items: string[], max = 40): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of items) {
+    const v = typeof raw === "string" ? raw.replace(/\s+/g, " ").trim() : "";
+    if (!v) continue;
+    const key = v.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(v);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+function isProjectEntry(value: unknown): value is ProjectEntry {
+  if (!isRecord(value)) return false;
+  const keyOk =
+    value.clientKey === undefined ||
+    (typeof value.clientKey === "string" && value.clientKey.length > 0);
+  const techOk =
+    value.tech === undefined ||
+    (Array.isArray(value.tech) && value.tech.every((x) => typeof x === "string"));
+  const bulletsOk =
+    value.bullets === undefined ||
+    (Array.isArray(value.bullets) &&
+      value.bullets.every((x) => typeof x === "string"));
+  return (
+    keyOk &&
+    techOk &&
+    bulletsOk &&
+    typeof value.name === "string" &&
+    typeof value.description === "string" &&
+    typeof value.link === "string"
+  );
+}
+
+function normalizeProjects(value: unknown): ProjectEntry[] {
+  if (!Array.isArray(value)) return [];
+
+  // Migration: previous versions stored projects as string[] (one bullet per line).
+  if (isStringArray(value)) {
+    const bullets = value.map((x) => x.trim()).filter(Boolean);
+    return bullets.length
+      ? [
+          {
+            clientKey: newExperienceJobClientKey(),
+            name: "",
+            description: "",
+            tech: [],
+            link: "",
+            bullets,
+          },
+        ]
+      : [];
+  }
+
+  const entries = value.filter(isProjectEntry);
+  return entries.map((p) => ({
+    name: p.name,
+    description: p.description,
+    link: p.link,
+    tech: uniqTechStrings(
+      Array.isArray(p.tech) ? p.tech : [],
+    ),
+    bullets: (Array.isArray(p.bullets) ? p.bullets : [])
+      .map((x) => x.trim())
+      .filter(Boolean),
+    clientKey:
+      typeof p.clientKey === "string" && p.clientKey.length > 0
+        ? p.clientKey
+        : newExperienceJobClientKey(),
+  }));
+}
+
 function isEducationEntry(value: unknown): value is EducationEntry {
   if (!isRecord(value)) return false;
   const keyOk =
@@ -116,7 +196,8 @@ function normalizeEducation(value: unknown): EducationEntry[] {
 function isSpokenLanguage(value: unknown): value is SpokenLanguageEntry {
   if (!isRecord(value)) return false;
   const customOk =
-    value.useCustomName === undefined || typeof value.useCustomName === "boolean";
+    value.useCustomName === undefined ||
+    typeof value.useCustomName === "boolean";
   return (
     customOk &&
     typeof value.name === "string" &&
@@ -163,6 +244,7 @@ function mergeDraft(partial: unknown): ResumeDraft {
       experience: normalizeExperience(sections?.experience),
       education: normalizeEducation(sections?.education),
       languages: normalizeLanguages(sections?.languages),
+      projects: normalizeProjects(sections?.projects),
     },
   };
 }
@@ -182,10 +264,9 @@ export function saveDraft(draft: ResumeDraft): void {
   if (typeof window === "undefined") return;
   try {
     const photoUrl = draft.header.photoUrl ?? "";
-    const safeDraft: ResumeDraft =
-      photoUrl.startsWith("data:")
-        ? { ...draft, header: { ...draft.header, photoUrl: "" } }
-        : draft;
+    const safeDraft: ResumeDraft = photoUrl.startsWith("data:")
+      ? { ...draft, header: { ...draft.header, photoUrl: "" } }
+      : draft;
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(safeDraft));
   } catch {
@@ -201,4 +282,3 @@ export function resetDraft(): void {
     // ignore
   }
 }
-

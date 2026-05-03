@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import {
   closestCenter,
@@ -23,7 +23,10 @@ import { CSS } from "@dnd-kit/utilities";
 
 import type { ResumeLabels } from "@/lib/resume/labels";
 import { newExperienceJobClientKey } from "@/lib/resume/experience-id";
-import { LANGUAGE_LEVEL_DEFAULT, languageProficiencyOptions } from "@/lib/resume/language-levels";
+import {
+  LANGUAGE_LEVEL_DEFAULT,
+  languageProficiencyOptions,
+} from "@/lib/resume/language-levels";
 import {
   isPresetSpokenLanguageName,
   SPOKEN_LANGUAGE_CUSTOM,
@@ -33,9 +36,11 @@ import {
 import type {
   EducationEntry,
   ExperienceJob,
+  ProjectEntry,
   ResumeBodySectionId,
   ResumeLanguage,
   ResumeSections,
+  SkillsHeadingVariant,
   SpokenLanguageEntry,
 } from "@/lib/resume/types";
 
@@ -48,29 +53,17 @@ const ROW_ACTION_BTN_ADD_CLASS =
 const ROW_ACTION_BTN_REMOVE_CLASS =
   "rounded-md border border-rose-200 bg-white px-2.5 py-1 text-xs font-medium text-rose-700 shadow-sm hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 
-const PLACEHOLDER_CLIENT_KEY = "__experience_editor_placeholder__";
-const PLACEHOLDER_EDU_KEY = "__education_editor_placeholder__";
-
-function placeholderJob(): ExperienceJob {
-  return {
-    clientKey: PLACEHOLDER_CLIENT_KEY,
-    title: "",
-    company: "",
-    location: "",
-    dates: "",
-    highlights: [],
-  };
-}
-
 type Props = {
   labels: ResumeLabels;
   resumeLanguage: ResumeLanguage;
   sections: ResumeSections;
   sectionsOrder: ResumeBodySectionId[];
+  skillsHeadingVariant: SkillsHeadingVariant;
   showProjects: boolean;
   showCertificates: boolean;
   onSectionsChange: (patch: Partial<ResumeSections>) => void;
   onSectionsOrderChange: (next: ResumeBodySectionId[]) => void;
+  onDraftSettingsChange: (patch: { skillsHeadingVariant?: SkillsHeadingVariant }) => void;
   onVisibilityChange: (patch: {
     showProjects?: boolean;
     showCertificates?: boolean;
@@ -107,7 +100,9 @@ function TextArea({
 }) {
   return (
     <label className="block">
-      {label ? <div className="text-xs font-medium text-slate-600">{label}</div> : null}
+      {label ? (
+        <div className="text-xs font-medium text-slate-600">{label}</div>
+      ) : null}
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -166,6 +161,89 @@ function Field({
   );
 }
 
+function addTechUnique(current: string[], next: string): string[] {
+  const t = next.replace(/\s+/g, " ").trim();
+  if (!t) return current;
+  const lower = t.toLowerCase();
+  if (current.some((x) => x.toLowerCase() === lower)) return current;
+  return [...current, t];
+}
+
+function ChipsInput({
+  label,
+  hint,
+  values,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  values: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [draft, setDraft] = useState("");
+
+  function flushCommaSeparated(input: string) {
+    if (!input.includes(",")) {
+      setDraft(input);
+      return;
+    }
+    let next = [...values];
+    const parts = input.split(",");
+    const tail = parts.pop() ?? "";
+    for (const part of parts) {
+      next = addTechUnique(next, part);
+    }
+    onChange(next);
+    setDraft(tail);
+  }
+
+  return (
+    <div>
+      <div className="text-xs font-medium text-slate-600">{label}</div>
+      <p className="mt-0.5 text-[11px] text-slate-500">{hint}</p>
+      <input
+        type="text"
+        value={draft}
+        onChange={(e) => flushCommaSeparated(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (!draft.trim()) return;
+            onChange(addTechUnique(values, draft));
+            setDraft("");
+            return;
+          }
+          if (e.key === "Backspace" && !draft && values.length) {
+            onChange(values.slice(0, -1));
+          }
+        }}
+        className="mt-1 h-7 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
+        placeholder="React"
+      />
+      {values.length ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {values.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-800"
+            >
+              {tag}
+              <button
+                type="button"
+                className="rounded px-0.5 text-slate-500 hover:bg-slate-200/80 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60"
+                aria-label={`Remove ${tag}`}
+                onClick={() => onChange(values.filter((x) => x !== tag))}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function newJob(): ExperienceJob {
   return {
     clientKey: newExperienceJobClientKey(),
@@ -174,18 +252,6 @@ function newJob(): ExperienceJob {
     location: "",
     dates: "",
     highlights: [],
-  };
-}
-
-function placeholderEducation(): EducationEntry {
-  return {
-    clientKey: PLACEHOLDER_EDU_KEY,
-    degree: "",
-    institution: "",
-    location: "",
-    dates: "",
-    coursework: "",
-    honors: "",
   };
 }
 
@@ -198,6 +264,17 @@ function newEducation(): EducationEntry {
     dates: "",
     coursework: "",
     honors: "",
+  };
+}
+
+function newProject(): ProjectEntry {
+  return {
+    clientKey: newExperienceJobClientKey(),
+    name: "",
+    description: "",
+    tech: [],
+    link: "",
+    bullets: [],
   };
 }
 
@@ -300,10 +377,18 @@ function ExperienceJobFields({
       </div>
 
       <div className={ROW_ACTIONS_WRAP_CLASS}>
-        <button type="button" onClick={() => addJobAfter(idx)} className={ROW_ACTION_BTN_ADD_CLASS}>
+        <button
+          type="button"
+          onClick={() => addJobAfter(idx)}
+          className={ROW_ACTION_BTN_ADD_CLASS}
+        >
           Add below
         </button>
-        <button type="button" onClick={() => removeJob(idx)} className={ROW_ACTION_BTN_REMOVE_CLASS}>
+        <button
+          type="button"
+          onClick={() => removeJob(idx)}
+          className={ROW_ACTION_BTN_REMOVE_CLASS}
+        >
           Remove
         </button>
       </div>
@@ -324,7 +409,14 @@ function SortableExperienceJobRow({
   addJobAfter,
   removeJob,
 }: SortableJobRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: sortableId,
   });
 
@@ -468,11 +560,20 @@ function EducationEntryFields({
   );
 }
 
-type SortableEducationRowProps = EducationRowFieldsProps & { sortableId: string };
+type SortableEducationRowProps = EducationRowFieldsProps & {
+  sortableId: string;
+};
 
 function SortableEducationRow(props: SortableEducationRowProps) {
   const { sortableId, ...fieldProps } = props;
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: sortableId,
   });
 
@@ -512,6 +613,139 @@ function StaticEducationRow(props: EducationRowFieldsProps) {
   );
 }
 
+type ProjectRowFieldsProps = {
+  project: ProjectEntry;
+  idx: number;
+  labels: ResumeLabels;
+  patchProject: (idx: number, patch: Partial<ProjectEntry>) => void;
+  addProjectAfter: (idx: number) => void;
+  removeProject: (idx: number) => void;
+};
+
+function ProjectFields({
+  project,
+  idx,
+  labels,
+  patchProject,
+  addProjectAfter,
+  removeProject,
+}: ProjectRowFieldsProps) {
+  return (
+    <>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field
+          label={labels.projectName}
+          value={project.name}
+          onChange={(v) => patchProject(idx, { name: v })}
+          placeholder="ATS Resume Generator"
+        />
+        <Field
+          label={labels.projectLink}
+          value={project.link}
+          onChange={(v) => patchProject(idx, { link: v })}
+          placeholder="https://github.com/…"
+        />
+      </div>
+      <div className="mt-3">
+        <Field
+          label={labels.projectDescription}
+          value={project.description}
+          onChange={(v) => patchProject(idx, { description: v })}
+          placeholder="Internal tool that cut onboarding time by 30%."
+        />
+      </div>
+      <div className="mt-3">
+        <ChipsInput
+          label={labels.projectTech}
+          hint={labels.projectTechAddHint}
+          values={project.tech ?? []}
+          onChange={(tech) => patchProject(idx, { tech })}
+        />
+      </div>
+      <div className="mt-3">
+        <TextArea
+          label={labels.projectBullets}
+          value={arrayToLines(project.bullets ?? [])}
+          onChange={(v) =>
+            patchProject(idx, { bullets: linesToArray(v) })
+          }
+          rows={5}
+          placeholder="Built…\nImproved…\nShipped…"
+        />
+      </div>
+      <div className={ROW_ACTIONS_WRAP_CLASS}>
+        <button
+          type="button"
+          onClick={() => addProjectAfter(idx)}
+          className={ROW_ACTION_BTN_ADD_CLASS}
+        >
+          {labels.addProjectBelow}
+        </button>
+        <button
+          type="button"
+          onClick={() => removeProject(idx)}
+          className={ROW_ACTION_BTN_REMOVE_CLASS}
+        >
+          {labels.removeProject}
+        </button>
+      </div>
+    </>
+  );
+}
+
+type SortableProjectRowProps = ProjectRowFieldsProps & {
+  sortableId: string;
+};
+
+function SortableProjectRow(props: SortableProjectRowProps) {
+  const { sortableId, ...fieldProps } = props;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: sortableId,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={[
+        "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-opacity",
+        isDragging ? "z-10 opacity-80 ring-2 ring-indigo-400/50" : "",
+      ].join(" ")}
+    >
+      <div className="flex gap-3">
+        <div className="min-w-0 flex-1">
+          <ProjectFields {...fieldProps} />
+        </div>
+        <DragGripHandle
+          listeners={listeners}
+          attributes={attributes}
+          ariaLabel="Drag to reorder this project"
+        />
+      </div>
+    </div>
+  );
+}
+
+function StaticProjectRow(props: ProjectRowFieldsProps) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <ProjectFields {...props} />
+    </div>
+  );
+}
+
 function SortableBodySectionRow({
   id,
   children,
@@ -519,7 +753,14 @@ function SortableBodySectionRow({
   id: ResumeBodySectionId;
   children: (dragHandle: ReactNode) => ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id,
   });
   const style = {
@@ -613,7 +854,9 @@ function LanguageRowContent({
                 {o.label}
               </option>
             ))}
-            <option value={SPOKEN_LANGUAGE_CUSTOM}>{labels.languageOtherCustom}</option>
+            <option value={SPOKEN_LANGUAGE_CUSTOM}>
+              {labels.languageOtherCustom}
+            </option>
           </select>
           {showCustomName ? (
             <input
@@ -644,10 +887,18 @@ function LanguageRowContent({
         </div>
       </div>
       <div className={ROW_ACTIONS_WRAP_CLASS}>
-        <button type="button" onClick={() => addLanguageAfter(idx)} className={ROW_ACTION_BTN_ADD_CLASS}>
+        <button
+          type="button"
+          onClick={() => addLanguageAfter(idx)}
+          className={ROW_ACTION_BTN_ADD_CLASS}
+        >
           {labels.addLanguageBelow}
         </button>
-        <button type="button" onClick={() => removeLanguageRow(idx)} className={ROW_ACTION_BTN_REMOVE_CLASS}>
+        <button
+          type="button"
+          onClick={() => removeLanguageRow(idx)}
+          className={ROW_ACTION_BTN_REMOVE_CLASS}
+        >
           {labels.removeLanguage}
         </button>
       </div>
@@ -659,7 +910,14 @@ type SortableLanguageRowProps = LanguageRowFieldsProps & { sortableId: string };
 
 function SortableLanguageRow(props: SortableLanguageRowProps) {
   const { sortableId, ...fieldProps } = props;
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: sortableId,
   });
 
@@ -704,16 +962,28 @@ export function ResumeSectionsEditor({
   resumeLanguage,
   sections,
   sectionsOrder,
+  skillsHeadingVariant,
   showProjects,
   showCertificates,
   onSectionsChange,
   onSectionsOrderChange,
+  onDraftSettingsChange,
   onVisibilityChange,
   onActiveSectionChange,
 }: Props) {
   const jobs = useMemo(() => sections.experience ?? [], [sections.experience]);
-  const education = useMemo(() => sections.education ?? [], [sections.education]);
-  const languages = useMemo(() => sections.languages ?? [], [sections.languages]);
+  const education = useMemo(
+    () => sections.education ?? [],
+    [sections.education],
+  );
+  const languages = useMemo(
+    () => sections.languages ?? [],
+    [sections.languages],
+  );
+  const projects = useMemo(
+    () => sections.projects ?? [],
+    [sections.projects],
+  );
   const proficiencyOptions = useMemo(
     () => languageProficiencyOptions(resumeLanguage),
     [resumeLanguage],
@@ -722,22 +992,33 @@ export function ResumeSectionsEditor({
     () => spokenLanguageSelectOptions(resumeLanguage),
     [resumeLanguage],
   );
-  const jobsForRender = jobs.length ? jobs : [placeholderJob()];
   const canReorderJobs = jobs.length > 1;
   const sortableReady =
     canReorderJobs &&
-    jobs.every((j) => typeof j.clientKey === "string" && j.clientKey.length > 0);
+    jobs.every(
+      (j) => typeof j.clientKey === "string" && j.clientKey.length > 0,
+    );
 
-  const educationForRender = education.length ? education : [placeholderEducation()];
   const canReorderEducation = education.length > 1;
   const sortableEducationReady =
     canReorderEducation &&
-    education.every((e) => typeof e.clientKey === "string" && e.clientKey.length > 0);
+    education.every(
+      (e) => typeof e.clientKey === "string" && e.clientKey.length > 0,
+    );
 
   const canReorderLanguages = languages.length > 1;
   const sortableLanguagesReady =
     canReorderLanguages &&
-    languages.every((l) => typeof l.clientKey === "string" && l.clientKey.length > 0);
+    languages.every(
+      (l) => typeof l.clientKey === "string" && l.clientKey.length > 0,
+    );
+
+  const canReorderProjects = projects.length > 1;
+  const sortableProjectsReady =
+    canReorderProjects &&
+    projects.every(
+      (p) => typeof p.clientKey === "string" && p.clientKey.length > 0,
+    );
 
   useEffect(() => {
     if (jobs.length === 0) return;
@@ -745,7 +1026,10 @@ export function ResumeSectionsEditor({
     onSectionsChange({
       experience: jobs.map((j) => ({
         ...j,
-        clientKey: j.clientKey && j.clientKey.length > 0 ? j.clientKey : newExperienceJobClientKey(),
+        clientKey:
+          j.clientKey && j.clientKey.length > 0
+            ? j.clientKey
+            : newExperienceJobClientKey(),
       })),
     });
   }, [jobs, onSectionsChange]);
@@ -756,7 +1040,10 @@ export function ResumeSectionsEditor({
     onSectionsChange({
       languages: languages.map((row) => ({
         ...row,
-        clientKey: row.clientKey && row.clientKey.length > 0 ? row.clientKey : newExperienceJobClientKey(),
+        clientKey:
+          row.clientKey && row.clientKey.length > 0
+            ? row.clientKey
+            : newExperienceJobClientKey(),
       })),
     });
   }, [languages, onSectionsChange]);
@@ -767,10 +1054,27 @@ export function ResumeSectionsEditor({
     onSectionsChange({
       education: education.map((e) => ({
         ...e,
-        clientKey: e.clientKey && e.clientKey.length > 0 ? e.clientKey : newExperienceJobClientKey(),
+        clientKey:
+          e.clientKey && e.clientKey.length > 0
+            ? e.clientKey
+            : newExperienceJobClientKey(),
       })),
     });
   }, [education, onSectionsChange]);
+
+  useEffect(() => {
+    if (projects.length === 0) return;
+    if (projects.every((p) => p.clientKey && p.clientKey.length > 0)) return;
+    onSectionsChange({
+      projects: projects.map((p) => ({
+        ...p,
+        clientKey:
+          p.clientKey && p.clientKey.length > 0
+            ? p.clientKey
+            : newExperienceJobClientKey(),
+      })),
+    });
+  }, [projects, onSectionsChange]);
 
   const jobSensors = useSensors(
     useSensor(PointerSensor, {
@@ -799,6 +1103,15 @@ export function ResumeSectionsEditor({
     }),
   );
 
+  const projectSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 6 },
+    }),
+  );
+
   const sectionSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -809,53 +1122,43 @@ export function ResumeSectionsEditor({
   );
 
   function patchJob(idx: number, patch: Partial<ExperienceJob>) {
-    if (jobs.length === 0 && idx === 0) {
-      onSectionsChange({ experience: [{ ...newJob(), ...patch }] });
-      return;
-    }
     const next = jobs.map((j, i) => (i === idx ? { ...j, ...patch } : j));
     onSectionsChange({ experience: next });
   }
 
   function removeJob(idx: number) {
     const next = jobs.filter((_, i) => i !== idx);
-    onSectionsChange({ experience: next.length ? next : [newJob()] });
+    onSectionsChange({ experience: next });
   }
 
   function addJobAfter(idx: number) {
-    if (jobs.length === 0) {
-      onSectionsChange({ experience: [newJob(), newJob()] });
-      return;
-    }
     const next = [...jobs.slice(0, idx + 1), newJob(), ...jobs.slice(idx + 1)];
     onSectionsChange({ experience: next });
   }
 
   function patchEducation(idx: number, patch: Partial<EducationEntry>) {
-    if (education.length === 0 && idx === 0) {
-      onSectionsChange({ education: [{ ...newEducation(), ...patch }] });
-      return;
-    }
     const next = education.map((e, i) => (i === idx ? { ...e, ...patch } : e));
     onSectionsChange({ education: next });
   }
 
   function removeEducation(idx: number) {
     const next = education.filter((_, i) => i !== idx);
-    onSectionsChange({ education: next.length ? next : [newEducation()] });
+    onSectionsChange({ education: next });
   }
 
   function addEducationAfter(idx: number) {
-    if (education.length === 0) {
-      onSectionsChange({ education: [newEducation(), newEducation()] });
-      return;
-    }
-    const next = [...education.slice(0, idx + 1), newEducation(), ...education.slice(idx + 1)];
+    const next = [
+      ...education.slice(0, idx + 1),
+      newEducation(),
+      ...education.slice(idx + 1),
+    ];
     onSectionsChange({ education: next });
   }
 
   function patchLanguageRow(idx: number, patch: Partial<SpokenLanguageEntry>) {
-    const next = languages.map((row, i) => (i === idx ? { ...row, ...patch } : row));
+    const next = languages.map((row, i) =>
+      i === idx ? { ...row, ...patch } : row,
+    );
     onSectionsChange({ languages: next });
   }
 
@@ -881,7 +1184,11 @@ export function ResumeSectionsEditor({
       useCustomName: false,
     };
     onSectionsChange({
-      languages: [...languages.slice(0, idx + 1), row, ...languages.slice(idx + 1)],
+      languages: [
+        ...languages.slice(0, idx + 1),
+        row,
+        ...languages.slice(idx + 1),
+      ],
     });
   }
 
@@ -916,6 +1223,34 @@ export function ResumeSectionsEditor({
     onSectionsChange({ education: arrayMove(education, oldIndex, newIndex) });
   }
 
+  function patchProject(idx: number, patch: Partial<ProjectEntry>) {
+    const next = projects.map((p, i) => (i === idx ? { ...p, ...patch } : p));
+    onSectionsChange({ projects: next });
+  }
+
+  function removeProject(idx: number) {
+    const next = projects.filter((_, i) => i !== idx);
+    onSectionsChange({ projects: next });
+  }
+
+  function addProjectAfter(idx: number) {
+    const next = [
+      ...projects.slice(0, idx + 1),
+      newProject(),
+      ...projects.slice(idx + 1),
+    ];
+    onSectionsChange({ projects: next });
+  }
+
+  function onProjectDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = projects.findIndex((p) => p.clientKey === active.id);
+    const newIndex = projects.findIndex((p) => p.clientKey === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    onSectionsChange({ projects: arrayMove(projects, oldIndex, newIndex) });
+  }
+
   function onSectionDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -930,9 +1265,45 @@ export function ResumeSectionsEditor({
       className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
       onFocusCapture={() => onActiveSectionChange?.("skills")}
     >
-      <div className="flex items-center gap-1.5">
-        {dragHandle}
-        <div className="text-xs font-medium text-slate-600">{labels.skills}</div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-1.5">
+          {dragHandle}
+          <div className="text-xs font-medium text-slate-600">
+            {skillsHeadingVariant === "technicalSkills"
+              ? labels.technicalSkills
+              : labels.skills}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-700">
+          <label className="inline-flex items-center gap-2">
+            <input
+              type="radio"
+              name="skills-heading"
+              value="skills"
+              checked={skillsHeadingVariant === "skills"}
+              onChange={() =>
+                onDraftSettingsChange({ skillsHeadingVariant: "skills" })
+              }
+              className="h-4 w-4 accent-indigo-600"
+            />
+            <span>{labels.skills}</span>
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <input
+              type="radio"
+              name="skills-heading"
+              value="technicalSkills"
+              checked={skillsHeadingVariant === "technicalSkills"}
+              onChange={() =>
+                onDraftSettingsChange({
+                  skillsHeadingVariant: "technicalSkills",
+                })
+              }
+              className="h-4 w-4 accent-indigo-600"
+            />
+            <span>{labels.technicalSkills}</span>
+          </label>
+        </div>
       </div>
       <div className="mt-2">
         <TextArea
@@ -940,7 +1311,9 @@ export function ResumeSectionsEditor({
           value={arrayToLines(sections.skills)}
           onChange={(v) => onSectionsChange({ skills: linesToArray(v) })}
           rows={5}
-          placeholder={"Backend: Node.js, Express, Deno\nTesting: Jest, Vitest,"}
+          placeholder={
+            "Backend: Node.js, Express, Deno\nTesting: Jest, Vitest,"
+          }
         />
       </div>
     </div>
@@ -954,13 +1327,15 @@ export function ResumeSectionsEditor({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1.5">
           {dragHandle}
-          <div className="text-xs font-medium text-slate-600">{labels.experience}</div>
+          <div className="text-xs font-medium text-slate-600">
+            {labels.experience}
+          </div>
         </div>
         <button
           type="button"
           onClick={() =>
             onSectionsChange({
-              experience: jobs.length ? [...jobs, newJob()] : [newJob()],
+              experience: [...jobs, newJob()],
             })
           }
           className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
@@ -970,39 +1345,45 @@ export function ResumeSectionsEditor({
       </div>
 
       <div className="mt-2 grid gap-3">
-        {sortableReady ? (
-          <DndContext sensors={jobSensors} collisionDetection={closestCenter} onDragEnd={onJobDragEnd}>
-            <SortableContext
-              items={jobs.map((j) => j.clientKey!)}
-              strategy={verticalListSortingStrategy}
+        {jobs.length ? (
+          sortableReady ? (
+            <DndContext
+              sensors={jobSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onJobDragEnd}
             >
-              {jobs.map((job, idx) => (
-                <SortableExperienceJobRow
-                  key={job.clientKey}
-                  sortableId={job.clientKey!}
-                  job={job}
-                  idx={idx}
-                  resumeLanguage={resumeLanguage}
-                  patchJob={patchJob}
-                  addJobAfter={addJobAfter}
-                  removeJob={removeJob}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-        ) : (
-          jobsForRender.map((job, idx) => (
-            <StaticExperienceJobRow
-              key={job.clientKey ?? `job-${idx}`}
-              job={job}
-              idx={idx}
-              resumeLanguage={resumeLanguage}
-              patchJob={patchJob}
-              addJobAfter={addJobAfter}
-              removeJob={removeJob}
-            />
-          ))
-        )}
+              <SortableContext
+                items={jobs.map((j) => j.clientKey!)}
+                strategy={verticalListSortingStrategy}
+              >
+                {jobs.map((job, idx) => (
+                  <SortableExperienceJobRow
+                    key={job.clientKey}
+                    sortableId={job.clientKey!}
+                    job={job}
+                    idx={idx}
+                    resumeLanguage={resumeLanguage}
+                    patchJob={patchJob}
+                    addJobAfter={addJobAfter}
+                    removeJob={removeJob}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          ) : (
+            jobs.map((job, idx) => (
+              <StaticExperienceJobRow
+                key={job.clientKey ?? `job-${idx}`}
+                job={job}
+                idx={idx}
+                resumeLanguage={resumeLanguage}
+                patchJob={patchJob}
+                addJobAfter={addJobAfter}
+                removeJob={removeJob}
+              />
+            ))
+          )
+        ) : null}
       </div>
     </div>
   );
@@ -1012,18 +1393,66 @@ export function ResumeSectionsEditor({
       className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
       onFocusCapture={() => onActiveSectionChange?.("projects")}
     >
-      <div className="flex items-center gap-1.5">
-        {dragHandle}
-        <div className="text-xs font-medium text-slate-600">{labels.projects}</div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-1.5">
+          {dragHandle}
+          <div className="text-xs font-medium text-slate-600">
+            {labels.projects}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() =>
+            onSectionsChange({
+              projects: [...projects, newProject()],
+            })
+          }
+          className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        >
+          {labels.addProject}
+        </button>
       </div>
-      <div className="mt-2">
-        <TextArea
-          label=""
-          value={arrayToLines(sections.projects)}
-          onChange={(v) => onSectionsChange({ projects: linesToArray(v) })}
-          rows={6}
-          placeholder="One bullet per line (e.g., Built an internal tool that reduced onboarding time by 30%)."
-        />
+
+      <div className="mt-2 grid gap-3">
+        {projects.length ? (
+          sortableProjectsReady ? (
+            <DndContext
+              sensors={projectSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onProjectDragEnd}
+            >
+              <SortableContext
+                items={projects.map((p) => p.clientKey!)}
+                strategy={verticalListSortingStrategy}
+              >
+                {projects.map((project, idx) => (
+                  <SortableProjectRow
+                    key={project.clientKey}
+                    sortableId={project.clientKey!}
+                    project={project}
+                    idx={idx}
+                    labels={labels}
+                    patchProject={patchProject}
+                    addProjectAfter={addProjectAfter}
+                    removeProject={removeProject}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          ) : (
+            projects.map((project, idx) => (
+              <StaticProjectRow
+                key={project.clientKey ?? `project-${idx}`}
+                project={project}
+                idx={idx}
+                labels={labels}
+                patchProject={patchProject}
+                addProjectAfter={addProjectAfter}
+                removeProject={removeProject}
+              />
+            ))
+          )
+        ) : null}
       </div>
     </div>
   );
@@ -1036,13 +1465,15 @@ export function ResumeSectionsEditor({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1.5">
           {dragHandle}
-          <div className="text-xs font-medium text-slate-600">{labels.education}</div>
+          <div className="text-xs font-medium text-slate-600">
+            {labels.education}
+          </div>
         </div>
         <button
           type="button"
           onClick={() =>
             onSectionsChange({
-              education: education.length ? [...education, newEducation()] : [newEducation()],
+              education: [...education, newEducation()],
             })
           }
           className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
@@ -1050,48 +1481,52 @@ export function ResumeSectionsEditor({
           {labels.addEducation}
         </button>
       </div>
-      <p className="mt-2 text-xs text-slate-500">{labels.educationOrderHint}</p>
+      {education.length ? (
+        <p className="mt-2 text-xs text-slate-500">{labels.educationOrderHint}</p>
+      ) : null}
 
       <div className="mt-2 grid gap-3">
-        {sortableEducationReady ? (
-          <DndContext
-            sensors={educationSensors}
-            collisionDetection={closestCenter}
-            onDragEnd={onEducationDragEnd}
-          >
-            <SortableContext
-              items={education.map((e) => e.clientKey!)}
-              strategy={verticalListSortingStrategy}
+        {education.length ? (
+          sortableEducationReady ? (
+            <DndContext
+              sensors={educationSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onEducationDragEnd}
             >
-              {education.map((entry, idx) => (
-                <SortableEducationRow
-                  key={entry.clientKey}
-                  sortableId={entry.clientKey!}
-                  entry={entry}
-                  idx={idx}
-                  labels={labels}
-                  resumeLanguage={resumeLanguage}
-                  patchEducation={patchEducation}
-                  addEducationAfter={addEducationAfter}
-                  removeEducation={removeEducation}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-        ) : (
-          educationForRender.map((entry, idx) => (
-            <StaticEducationRow
-              key={entry.clientKey ?? `edu-${idx}`}
-              entry={entry}
-              idx={idx}
-              labels={labels}
-              resumeLanguage={resumeLanguage}
-              patchEducation={patchEducation}
-              addEducationAfter={addEducationAfter}
-              removeEducation={removeEducation}
-            />
-          ))
-        )}
+              <SortableContext
+                items={education.map((e) => e.clientKey!)}
+                strategy={verticalListSortingStrategy}
+              >
+                {education.map((entry, idx) => (
+                  <SortableEducationRow
+                    key={entry.clientKey}
+                    sortableId={entry.clientKey!}
+                    entry={entry}
+                    idx={idx}
+                    labels={labels}
+                    resumeLanguage={resumeLanguage}
+                    patchEducation={patchEducation}
+                    addEducationAfter={addEducationAfter}
+                    removeEducation={removeEducation}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          ) : (
+            education.map((entry, idx) => (
+              <StaticEducationRow
+                key={entry.clientKey ?? `edu-${idx}`}
+                entry={entry}
+                idx={idx}
+                labels={labels}
+                resumeLanguage={resumeLanguage}
+                patchEducation={patchEducation}
+                addEducationAfter={addEducationAfter}
+                removeEducation={removeEducation}
+              />
+            ))
+          )
+        ) : null}
       </div>
     </div>
   );
@@ -1104,7 +1539,9 @@ export function ResumeSectionsEditor({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1.5">
           {dragHandle}
-          <div className="text-xs font-medium text-slate-600">{labels.languages}</div>
+          <div className="text-xs font-medium text-slate-600">
+            {labels.languages}
+          </div>
         </div>
         <button
           type="button"
@@ -1169,7 +1606,9 @@ export function ResumeSectionsEditor({
     >
       <div className="flex items-center gap-1.5">
         {dragHandle}
-        <div className="text-xs font-medium text-slate-600">{labels.certificates}</div>
+        <div className="text-xs font-medium text-slate-600">
+          {labels.certificates}
+        </div>
       </div>
       <div className="mt-2">
         <TextArea
@@ -1183,7 +1622,10 @@ export function ResumeSectionsEditor({
     </div>
   );
 
-  const bodySectionEditors: Record<ResumeBodySectionId, (dragHandle: ReactNode) => ReactNode> = {
+  const bodySectionEditors: Record<
+    ResumeBodySectionId,
+    (dragHandle: ReactNode) => ReactNode
+  > = {
     skills: skillsEditor,
     experience: experienceEditor,
     projects: projectsEditor,
@@ -1244,7 +1686,10 @@ export function ResumeSectionsEditor({
           collisionDetection={closestCenter}
           onDragEnd={onSectionDragEnd}
         >
-          <SortableContext items={sectionsOrder} strategy={verticalListSortingStrategy}>
+          <SortableContext
+            items={sectionsOrder}
+            strategy={verticalListSortingStrategy}
+          >
             <div className="mt-3 grid gap-4">
               {sectionsOrder.map((sectionId) => (
                 <SortableBodySectionRow key={sectionId} id={sectionId}>

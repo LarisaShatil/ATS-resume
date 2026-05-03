@@ -33,6 +33,7 @@ export type ResumeLabels = {
 
   summary: string;
   skills: string;
+  technicalSkills: string;
   experience: string;
   projects: string;
   education: string;
@@ -59,6 +60,18 @@ export type ResumeLabels = {
   certificates: string;
   /** Hint for drag-reordering body sections below Professional Summary. */
   sectionReorderHint: string;
+
+  projectName: string;
+  projectDescription: string;
+  projectTech: string;
+  projectLink: string;
+  projectBullets: string;
+  addProject: string;
+  addProjectBelow: string;
+  removeProject: string;
+  projectTechAddHint: string;
+  /** Plain prefix before comma-separated tech in preview/PDF (e.g. "Tech:"). */
+  projectTechInlineLabel: string;
 };
 
 export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
@@ -95,13 +108,14 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
 
     summary: "Professional Summary",
     skills: "Skills",
+    technicalSkills: "Technical Skills",
     experience: "Work Experience",
     projects: "Projects",
     education: "Education",
     educationDegree: "Degree / Program",
     educationInstitution: "Institution",
     educationLocation: "Location",
-    educationCoursework: "Relevant coursework",
+    educationCoursework: "Key Courses",
     educationHonors: "Honors / Awards",
     addEducation: "Add education",
     addEducationBelow: "Add below",
@@ -120,6 +134,17 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     certificates: "Certificates",
     sectionReorderHint:
       "Drag the handle on the left to reorder sections on your resume.",
+
+    projectName: "Project name",
+    projectDescription: "Short description (one line)",
+    projectTech: "Tech stack",
+    projectLink: "Link (optional)",
+    projectBullets: "Bullets (one per line)",
+    addProject: "Add project",
+    addProjectBelow: "Add below",
+    removeProject: "Remove",
+    projectTechAddHint: "Press Enter or comma to add a tag",
+    projectTechInlineLabel: "Tech:",
   },
   uk: {
     appTitle: "ATS Генератор Резюме",
@@ -154,6 +179,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
 
     summary: "Професійний профіль",
     skills: "Навички",
+    technicalSkills: "Технічні навички",
     experience: "Досвід роботи",
     projects: "Проєкти",
     education: "Освіта",
@@ -179,6 +205,17 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     certificates: "Сертифікати",
     sectionReorderHint:
       "Перетягніть ручку зліва, щоб змінити порядок розділів у резюме.",
+
+    projectName: "Назва проєкту",
+    projectDescription: "Короткий опис (один рядок)",
+    projectTech: "Технології",
+    projectLink: "Посилання (необов’язково)",
+    projectBullets: "Пункти (по одному на рядок)",
+    addProject: "Додати проєкт",
+    addProjectBelow: "Додати нижче",
+    removeProject: "Прибрати",
+    projectTechAddHint: "Enter або кома — додати тег",
+    projectTechInlineLabel: "Технології:",
   },
   ru: {
     appTitle: "ATS Генератор Резюме",
@@ -213,6 +250,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
 
     summary: "Профессиональный профиль",
     skills: "Навыки",
+    technicalSkills: "Технические навыки",
     experience: "Опыт работы",
     projects: "Проекты",
     education: "Образование",
@@ -238,10 +276,20 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     certificates: "Сертификаты",
     sectionReorderHint:
       "Перетащите маркер слева, чтобы изменить порядок разделов в резюме.",
+
+    projectName: "Название проекта",
+    projectDescription: "Краткое описание (одна строка)",
+    projectTech: "Стек технологий",
+    projectLink: "Ссылка (необязательно)",
+    projectBullets: "Пункты (по одному на строку)",
+    addProject: "Добавить проект",
+    addProjectBelow: "Добавить ниже",
+    removeProject: "Удалить",
+    projectTechAddHint: "Enter или запятая — добавить тег",
+    projectTechInlineLabel: "Технологии:",
   },
 };
 
 export function getLabels(language: ResumeLanguage): ResumeLabels {
   return LABELS[language] ?? LABELS.en;
 }
-

@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import {
   Document,
   Image as PdfImage,
+  Link,
   Page,
   Path,
   Svg,
@@ -11,7 +12,11 @@ import {
 } from "@react-pdf/renderer";
 import { normalizeBodySectionsOrder } from "@/lib/resume/body-section-order";
 import { formatResumeLanguageLine } from "@/lib/resume/language-levels";
-import type { ResumeBodySectionId, ResumeDraft } from "@/lib/resume/types";
+import type {
+  ProjectEntry,
+  ResumeBodySectionId,
+  ResumeDraft,
+} from "@/lib/resume/types";
 import { getLabels } from "@/lib/resume/labels";
 
 type Props = {
@@ -141,6 +146,26 @@ const styles = StyleSheet.create({
 
 function hasValue(v: string | undefined): boolean {
   return Boolean(v && v.trim().length > 0);
+}
+
+function projectHasContent(p: ProjectEntry): boolean {
+  const tech = (p.tech ?? []).some((t) => t.trim().length > 0);
+  const bullets = (p.bullets ?? []).some((b) => b.trim().length > 0);
+  return (
+    hasValue(p.name) ||
+    hasValue(p.description) ||
+    tech ||
+    hasValue(p.link) ||
+    bullets
+  );
+}
+
+function pdfLinkSrc(raw: string): string | null {
+  const t = raw.trim();
+  if (!t) return null;
+  if (/^https?:\/\//i.test(t)) return t;
+  if (t.startsWith("www.")) return `https://${t}`;
+  return `https://${t}`;
 }
 
 function isSafePdfImageSrc(src: string | undefined): boolean {
@@ -374,13 +399,17 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
   const rightContacts = contactEntries.slice(mid);
 
   const sectionsOrder = normalizeBodySectionsOrder(draft.sectionsOrder);
+  const skillsHeading =
+    draft.skillsHeadingVariant === "technicalSkills"
+      ? labels.technicalSkills
+      : labels.skills;
 
   function pdfBodySection(id: ResumeBodySectionId) {
     switch (id) {
       case "skills":
         return draft.sections.skills.length ? (
           <View style={styles.section} minPresenceAhead={110}>
-            <SectionHeading title={labels.skills} />
+            <SectionHeading title={skillsHeading} />
             <BulletList items={draft.sections.skills} />
           </View>
         ) : null;
@@ -417,18 +446,69 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
             </View>
           </View>
         ) : null;
-      case "projects":
-        return draft.showProjects && draft.sections.projects.length ? (
-          <View style={styles.section} minPresenceAhead={110}>
+      case "projects": {
+        const projectItems = (draft.sections.projects ?? []).filter(
+          projectHasContent,
+        );
+        if (!draft.showProjects || !projectItems.length) return null;
+        return (
+          <View style={styles.section} minPresenceAhead={140}>
             <SectionHeading title={labels.projects} />
-            <BulletList items={draft.sections.projects} />
+            <View style={{ gap: 6 }}>
+              {projectItems.map((p, idx) => {
+                const techLine = (p.tech ?? [])
+                  .map((t) => t.trim())
+                  .filter(Boolean)
+                  .join(", ");
+                const bullets = (p.bullets ?? [])
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                const href = hasValue(p.link) ? pdfLinkSrc(p.link) : null;
+                return (
+                  <View
+                    key={`proj-${idx}-${p.clientKey ?? p.name}`}
+                    style={styles.jobBlock}
+                  >
+                    {hasValue(p.name) ? (
+                      <Text style={styles.jobTitle}>{p.name}</Text>
+                    ) : null}
+                    {hasValue(p.description) ? (
+                      <Text style={styles.paragraph}>{p.description.trim()}</Text>
+                    ) : null}
+                    {techLine ? (
+                      <Text style={styles.paragraph}>
+                        {labels.projectTechInlineLabel} {techLine}
+                      </Text>
+                    ) : null}
+                    {hasValue(p.link) && href ? (
+                      <Link src={href} style={styles.paragraph}>
+                        {p.link.trim()}
+                      </Link>
+                    ) : hasValue(p.link) ? (
+                      <Text style={styles.paragraph}>{p.link.trim()}</Text>
+                    ) : null}
+                    {bullets.length ? (
+                      <View style={styles.jobHighlights}>
+                        <BulletList items={bullets} />
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
           </View>
-        ) : null;
+        );
+      }
       case "education": {
         const educationItems = (draft.sections.education ?? []).filter((e) =>
-          [e.degree, e.institution, e.location, e.dates, e.coursework, e.honors].some(
-            (s) => s && s.trim().length > 0,
-          ),
+          [
+            e.degree,
+            e.institution,
+            e.location,
+            e.dates,
+            e.coursework,
+            e.honors,
+          ].some((s) => s && s.trim().length > 0),
         );
         if (!educationItems.length) return null;
         return (
@@ -446,7 +526,9 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
                     style={styles.educationBlock}
                     wrap={false}
                   >
-                    {hasValue(e.degree) ? <Text style={styles.jobTitle}>{e.degree}</Text> : null}
+                    {hasValue(e.degree) ? (
+                      <Text style={styles.jobTitle}>{e.degree}</Text>
+                    ) : null}
                     {meta ? <Text style={styles.jobMeta}>{meta}</Text> : null}
                     {hasValue(e.coursework) || hasValue(e.honors) ? (
                       <View style={styles.jobHighlights}>
@@ -481,7 +563,9 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
             <BulletList
               items={(draft.sections.languages ?? [])
                 .filter((l) => l.name.trim())
-                .map((l) => formatResumeLanguageLine(draft.language, l.name, l.level))}
+                .map((l) =>
+                  formatResumeLanguageLine(draft.language, l.name, l.level),
+                )}
             />
           </View>
         ) : null;

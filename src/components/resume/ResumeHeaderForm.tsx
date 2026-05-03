@@ -28,6 +28,7 @@ function Field({
   placeholder,
   type = "text",
   inputMode,
+  onBlur,
 }: {
   label: string;
   value: string;
@@ -35,6 +36,7 @@ function Field({
   placeholder?: string;
   type?: "text" | "email" | "tel" | "url";
   inputMode?: HTMLAttributes<HTMLInputElement>["inputMode"];
+  onBlur?: () => void;
 }) {
   return (
     <label className="block">
@@ -44,6 +46,7 @@ function Field({
         inputMode={inputMode}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         placeholder={placeholder}
         className="mt-1 h-7 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
       />
@@ -71,6 +74,48 @@ function Toggle({
       <span>{label}</span>
     </label>
   );
+}
+
+function formatRecommendedPhone(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+
+  // Keep leading +, drop other non-digits for formatting decisions.
+  const hasPlus = trimmed.startsWith("+");
+  const digits = trimmed.replace(/[^\d]/g, "");
+  if (!digits) return trimmed;
+
+  // Finland-friendly formatting for (+)358XXXXXXXXX or (+)358XXXXXXXXXX
+  // Example: +358465670000 -> +358 46 567 0000
+  if ((hasPlus || trimmed.startsWith("358")) && digits.startsWith("358")) {
+    const rest = digits.slice(3);
+    if (rest.length === 9 || rest.length === 10) {
+      const part1 = rest.slice(0, 2);
+      const part2 = rest.slice(2, 5);
+      const part3 = rest.slice(5, 9);
+      const tail = rest.length === 10 ? ` ${rest.slice(9)}` : "";
+      return `+358 ${part1} ${part2} ${part3}${tail}`.trim();
+    }
+  }
+
+  // Generic: if the user typed only digits, add basic grouping for readability.
+  // We avoid strict validation; this is a formatting helper, not a parser.
+  if (/^\+?\d[\d\s().-]*$/.test(trimmed)) {
+    // If they already have a +, preserve it; otherwise, assume the first 2-3 digits is a country code.
+    const ccLen = digits.length >= 11 ? 3 : 2;
+    const cc = digits.slice(0, ccLen);
+    const rest = digits.slice(ccLen);
+    if (rest.length >= 7) {
+      const a = rest.slice(0, 2);
+      const b = rest.slice(2, 5);
+      const c = rest.slice(5, 9);
+      const tail = rest.length > 9 ? ` ${rest.slice(9)}` : "";
+      return `${hasPlus ? "+" : "+"}${cc} ${a} ${b} ${c}${tail}`.trim();
+    }
+  }
+
+  // Fallback: normalize whitespace, keep original characters.
+  return trimmed.replace(/\s+/g, " ");
 }
 
 export function ResumeHeaderForm({
@@ -177,8 +222,24 @@ export function ResumeHeaderForm({
           inputMode="tel"
           value={header.phone}
           onChange={(v) => onHeaderChange({ phone: v })}
-          placeholder="+1 555 123 4567"
+          onBlur={() =>
+            onHeaderChange({ phone: formatRecommendedPhone(header.phone) })
+          }
+          placeholder="+358 46 567 0000"
         />
+        <div className="-mt-2 text-xs text-slate-500 sm:col-span-2">
+          Recommended format: <span className="font-medium">+358 46 567 0000</span>{" "}
+          (international, with spaces). Your number will be kept as text for ATS.
+          <button
+            type="button"
+            onClick={() =>
+              onHeaderChange({ phone: formatRecommendedPhone(header.phone) })
+            }
+            className="ml-2 inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          >
+            Format
+          </button>
+        </div>
         <Field
           label={labels.location}
           value={header.location}
