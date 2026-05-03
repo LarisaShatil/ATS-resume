@@ -106,9 +106,11 @@ export function ResumeGeneratorScreen() {
             labels={labels}
             resumeLanguage={draft.language}
             sections={draft.sections}
+            sectionsOrder={draft.sectionsOrder}
             showProjects={draft.showProjects}
             showCertificates={draft.showCertificates}
             onSectionsChange={patchSections}
+            onSectionsOrderChange={(sectionsOrder) => patchDraft({ sectionsOrder })}
             onVisibilityChange={(patch) => patchDraft(patch)}
           />
 

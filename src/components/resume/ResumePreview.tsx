@@ -1,8 +1,10 @@
 "use client";
 
+import { Fragment } from "react";
 import dynamic from "next/dynamic";
+import { normalizeBodySectionsOrder } from "@/lib/resume/body-section-order";
 import { formatResumeLanguageLine } from "@/lib/resume/language-levels";
-import type { ResumeDraft } from "@/lib/resume/types";
+import type { ResumeBodySectionId, ResumeDraft } from "@/lib/resume/types";
 import type { ResumeLabels } from "@/lib/resume/labels";
 
 const ResumePdfDownloadButton = dynamic(
@@ -48,15 +50,38 @@ function PreviewSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-6">
+    <section className="mt-8">
       <div className="flex items-center gap-3">
         <h3 className="text-lg font-medium tracking-tight text-slate-700">
           {title}
         </h3>
         <div className="h-px flex-1 bg-slate-200" />
       </div>
-      <div className="mt-2 text-sm leading-6 text-slate-800">{children}</div>
+      <div className="mt-3 text-sm leading-6 text-slate-800">{children}</div>
     </section>
+  );
+}
+
+/** Flex bullets so wrapped lines align with body text, not the marker column. */
+function PreviewBulletList({ items }: { items: string[] }) {
+  if (!items.length) return null;
+  return (
+    <ul className="list-none space-y-1.5">
+      {items.map((text, idx) => (
+        <li
+          key={`bullet-${idx}-${text.slice(0, 32)}`}
+          className="flex gap-2.5 text-sm leading-6 text-slate-800"
+        >
+          <span
+            className="mt-[0.35em] w-[0.7em] shrink-0 text-center text-[0.95em] leading-none text-slate-700"
+            aria-hidden
+          >
+            •
+          </span>
+          <span className="min-w-0 flex-1">{text}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -179,6 +204,125 @@ export function ResumePreview({ labels, draft }: Props) {
   const contactRight = contactEntries.slice(mid);
 
   const fileName = `resume-${slugifyFilePart(h.fullName || "")}.pdf`;
+  const sectionsOrder = normalizeBodySectionsOrder(draft.sectionsOrder);
+
+  function previewBodySection(id: ResumeBodySectionId) {
+    switch (id) {
+      case "skills":
+        return draft.sections.skills.length ? (
+          <PreviewSection title={labels.skills}>
+            <PreviewBulletList items={draft.sections.skills} />
+          </PreviewSection>
+        ) : null;
+      case "experience":
+        return draft.sections.experience.length ? (
+          <PreviewSection title={labels.experience}>
+            <div className="grid gap-5">
+              {draft.sections.experience.map((job, idx) => {
+                const metaParts = [job.company, job.location, job.dates]
+                  .map((x) => x.trim())
+                  .filter(Boolean);
+                const meta = metaParts.join(" | ");
+                return (
+                  <section
+                    key={`${idx}-${job.title}-${meta}`}
+                    className="break-inside-avoid"
+                  >
+                    {hasValue(job.title) ? (
+                      <div className="text-sm font-semibold text-slate-900">
+                        {job.title}
+                      </div>
+                    ) : null}
+                    {meta ? (
+                      <div className="mt-0.5 text-xs text-slate-600">
+                        {meta}
+                      </div>
+                    ) : null}
+                    {job.highlights.length ? (
+                      <div className="mt-2">
+                        <PreviewBulletList items={job.highlights} />
+                      </div>
+                    ) : null}
+                  </section>
+                );
+              })}
+            </div>
+          </PreviewSection>
+        ) : null;
+      case "projects":
+        return draft.showProjects && draft.sections.projects.length ? (
+          <PreviewSection title={labels.projects}>
+            <PreviewBulletList items={draft.sections.projects} />
+          </PreviewSection>
+        ) : null;
+      case "education": {
+        const educationItems = (draft.sections.education ?? []).filter((e) =>
+          [e.degree, e.institution, e.location, e.dates, e.coursework, e.honors].some(
+            (s) => s && s.trim().length > 0,
+          ),
+        );
+        if (!educationItems.length) return null;
+        return (
+          <PreviewSection title={labels.education}>
+            <div className="grid gap-5">
+              {educationItems.map((e, idx) => {
+                const metaParts = [e.institution, e.location, e.dates]
+                  .map((x) => x.trim())
+                  .filter(Boolean);
+                const meta = metaParts.join(" | ");
+                return (
+                  <section
+                    key={`${idx}-${e.clientKey ?? e.degree}-${meta}`}
+                    className="break-inside-avoid"
+                  >
+                    {hasValue(e.degree) ? (
+                      <div className="text-sm font-semibold text-slate-900">{e.degree}</div>
+                    ) : null}
+                    {meta ? (
+                      <div className="mt-0.5 text-xs text-slate-600">{meta}</div>
+                    ) : null}
+                    {hasValue(e.coursework) ? (
+                      <div className="mt-2 text-sm text-slate-800">
+                        {labels.educationCoursework}: {e.coursework.trim()}
+                      </div>
+                    ) : null}
+                    {hasValue(e.honors) ? (
+                      <div
+                        className={[
+                          "text-sm text-slate-800",
+                          hasValue(e.coursework) ? "mt-1" : "mt-2",
+                        ].join(" ")}
+                      >
+                        {labels.educationHonors}: {e.honors.trim()}
+                      </div>
+                    ) : null}
+                  </section>
+                );
+              })}
+            </div>
+          </PreviewSection>
+        );
+      }
+      case "languages":
+        return (draft.sections.languages ?? []).some((l) => l.name.trim()) ? (
+          <PreviewSection title={labels.languages}>
+            <PreviewBulletList
+              items={(draft.sections.languages ?? [])
+                .filter((l) => l.name.trim())
+                .map((l) => formatResumeLanguageLine(draft.language, l.name, l.level))}
+            />
+          </PreviewSection>
+        ) : null;
+      case "certificates":
+        return draft.showCertificates && draft.sections.certificates.length ? (
+          <PreviewSection title={labels.certificates}>
+            <PreviewBulletList items={draft.sections.certificates} />
+          </PreviewSection>
+        ) : null;
+      default:
+        return null;
+    }
+  }
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -199,8 +343,9 @@ export function ResumePreview({ labels, draft }: Props) {
         />
       </div>
 
-      <div className="mt-5 rounded-xl border border-slate-200 bg-white p-6">
-        <header className="flex items-center gap-4">
+      <div className="mt-5 rounded-xl border border-slate-200 bg-white p-6 sm:p-7">
+        <div className="mx-auto max-w-[72ch]">
+          <header className="flex items-center gap-4">
           {showPhoto ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -219,10 +364,10 @@ export function ResumePreview({ labels, draft }: Props) {
               </div>
             ) : null}
           </div>
-        </header>
+          </header>
 
         {contactEntries.length ? (
-          <section className="mt-5">
+          <section className="mt-6">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-medium tracking-tight text-slate-700">
                 {labels.contacts}
@@ -274,96 +419,10 @@ export function ResumePreview({ labels, draft }: Props) {
           </PreviewSection>
         ) : null}
 
-        {draft.sections.skills.length ? (
-          <PreviewSection title={labels.skills}>
-            <ul className="list-disc space-y-1 pl-5">
-              {draft.sections.skills.map((x, idx) => (
-                <li key={`${idx}-${x}`}>{x}</li>
-              ))}
-            </ul>
-          </PreviewSection>
-        ) : null}
-
-        {draft.sections.experience.length ? (
-          <PreviewSection title={labels.experience}>
-            <div className="grid gap-4">
-              {draft.sections.experience.map((job, idx) => {
-                const metaParts = [job.company, job.location, job.dates]
-                  .map((x) => x.trim())
-                  .filter(Boolean);
-                const meta = metaParts.join(" | ");
-                return (
-                  <section
-                    key={`${idx}-${job.title}-${meta}`}
-                    className="break-inside-avoid"
-                  >
-                    {hasValue(job.title) ? (
-                      <div className="text-sm font-semibold text-slate-900">
-                        {job.title}
-                      </div>
-                    ) : null}
-                    {meta ? (
-                      <div className="mt-0.5 text-xs text-slate-600">
-                        {meta}
-                      </div>
-                    ) : null}
-                    {job.highlights.length ? (
-                      <ul className="mt-2 list-disc space-y-1 pl-5">
-                        {job.highlights.map((x, hIdx) => (
-                          <li key={`${idx}-${hIdx}-${x}`}>{x}</li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </section>
-                );
-              })}
-            </div>
-          </PreviewSection>
-        ) : null}
-
-        {draft.showProjects && draft.sections.projects.length ? (
-          <PreviewSection title={labels.projects}>
-            <ul className="list-disc space-y-1 pl-5">
-              {draft.sections.projects.map((x, idx) => (
-                <li key={`${idx}-${x}`}>{x}</li>
-              ))}
-            </ul>
-          </PreviewSection>
-        ) : null}
-
-        {draft.sections.education.length ? (
-          <PreviewSection title={labels.education}>
-            <ul className="list-disc space-y-1 pl-5">
-              {draft.sections.education.map((x, idx) => (
-                <li key={`${idx}-${x}`}>{x}</li>
-              ))}
-            </ul>
-          </PreviewSection>
-        ) : null}
-
-        {(draft.sections.languages ?? []).some((l) => l.name.trim()) ? (
-          <PreviewSection title={labels.languages}>
-            <ul className="list-disc space-y-1 pl-5">
-              {(draft.sections.languages ?? [])
-                .filter((l) => l.name.trim())
-                .map((l, idx) => (
-                  <li key={`${idx}-${l.clientKey ?? l.name}`}>
-                    {formatResumeLanguageLine(draft.language, l.name, l.level)}
-                  </li>
-                ))}
-            </ul>
-          </PreviewSection>
-        ) : null}
-
-        {draft.showCertificates && draft.sections.certificates.length ? (
-          <PreviewSection title={labels.certificates}>
-            <ul className="list-disc space-y-1 pl-5">
-              {draft.sections.certificates.map((x, idx) => (
-                <li key={`${idx}-${x}`}>{x}</li>
-              ))}
-            </ul>
-          </PreviewSection>
-        ) : null}
+        {sectionsOrder.map((sectionId) => (
+          <Fragment key={sectionId}>{previewBodySection(sectionId)}</Fragment>
+        ))}
+        </div>
       </div>
     </section>
   );

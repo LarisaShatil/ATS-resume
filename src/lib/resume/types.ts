@@ -22,6 +22,17 @@ export interface ExperienceJob {
   highlights: string[];
 }
 
+/** One education block on the resume (ATS-safe plain lines on export). */
+export interface EducationEntry {
+  clientKey?: string;
+  degree: string;
+  institution: string;
+  location: string;
+  dates: string;
+  coursework: string;
+  honors: string;
+}
+
 /** One spoken language line on the resume (name + CEFR-style level). */
 export interface SpokenLanguageEntry {
   clientKey?: string;
@@ -37,9 +48,31 @@ export interface ResumeSections {
   skills: string[];
   experience: ExperienceJob[];
   projects: string[];
-  education: string[];
+  education: EducationEntry[];
   languages: SpokenLanguageEntry[];
   certificates: string[];
+}
+
+/** Identifiers for body sections below Professional Summary (order is user-controlled). */
+export type ResumeBodySectionId =
+  | "skills"
+  | "experience"
+  | "projects"
+  | "education"
+  | "languages"
+  | "certificates";
+
+export const ALL_RESUME_BODY_SECTION_IDS = [
+  "skills",
+  "experience",
+  "projects",
+  "education",
+  "languages",
+  "certificates",
+] as const satisfies readonly ResumeBodySectionId[];
+
+export function defaultResumeBodySectionsOrder(): ResumeBodySectionId[] {
+  return [...ALL_RESUME_BODY_SECTION_IDS];
 }
 
 export interface ResumeDraft {
@@ -48,6 +81,8 @@ export interface ResumeDraft {
   sourceText: string;
   jobDescription: string;
   sections: ResumeSections;
+  /** Order of sections under Professional Summary in preview, PDF, and editor. */
+  sectionsOrder: ResumeBodySectionId[];
 
   showPhoto: boolean;
   showProjects: boolean;
@@ -89,5 +124,6 @@ export const DEFAULT_DRAFT: ResumeDraft = {
   showLinkedIn: true,
   showGithub: true,
   showPortfolio: true,
+  sectionsOrder: defaultResumeBodySectionsOrder(),
 };
 

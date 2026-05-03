@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import {
   Document,
   Image as PdfImage,
@@ -8,8 +9,9 @@ import {
   Text,
   View,
 } from "@react-pdf/renderer";
+import { normalizeBodySectionsOrder } from "@/lib/resume/body-section-order";
 import { formatResumeLanguageLine } from "@/lib/resume/language-levels";
-import type { ResumeDraft } from "@/lib/resume/types";
+import type { ResumeBodySectionId, ResumeDraft } from "@/lib/resume/types";
 import { getLabels } from "@/lib/resume/labels";
 
 type Props = {
@@ -18,14 +20,14 @@ type Props = {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 28,
-    paddingBottom: 28,
-    paddingHorizontal: 32,
+    paddingTop: 30,
+    paddingBottom: 30,
+    paddingHorizontal: 52,
     fontSize: 11,
     fontFamily: "Helvetica",
     color: "#111827",
     backgroundColor: "#ffffff",
-    lineHeight: 1.4,
+    lineHeight: 1.45,
   },
   headerRow: {
     flexDirection: "row",
@@ -63,13 +65,13 @@ const styles = StyleSheet.create({
     color: "#374151",
   },
   section: {
-    marginTop: 14,
+    marginTop: 20,
   },
   headingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   sectionHeading: {
     fontSize: 11,
@@ -86,22 +88,28 @@ const styles = StyleSheet.create({
     color: "#111827",
   },
   list: {
-    gap: 3,
+    gap: 4,
   },
   bulletRow: {
     flexDirection: "row",
-    gap: 6,
+    alignItems: "flex-start",
+    gap: 8,
   },
   bullet: {
-    width: 10,
+    width: 12,
+    marginTop: 1,
+    fontSize: 11,
+    lineHeight: 1.45,
+    textAlign: "center",
     color: "#111827",
   },
   bulletText: {
     flex: 1,
+    lineHeight: 1.45,
     color: "#111827",
   },
   jobBlock: {
-    marginTop: 6,
+    marginTop: 8,
   },
   jobTitle: {
     fontSize: 11,
@@ -114,7 +122,10 @@ const styles = StyleSheet.create({
     color: "#4B5563",
   },
   jobHighlights: {
-    marginTop: 4,
+    marginTop: 6,
+  },
+  educationBlock: {
+    marginTop: 8,
   },
 });
 
@@ -328,6 +339,127 @@ export function ResumePdfDocument({ draft }: Props) {
   const leftContacts = contactEntries.slice(0, mid);
   const rightContacts = contactEntries.slice(mid);
 
+  const sectionsOrder = normalizeBodySectionsOrder(draft.sectionsOrder);
+
+  function pdfBodySection(id: ResumeBodySectionId) {
+    switch (id) {
+      case "skills":
+        return draft.sections.skills.length ? (
+          <View style={styles.section}>
+            <SectionHeading title={labels.skills} />
+            <BulletList items={draft.sections.skills} />
+          </View>
+        ) : null;
+      case "experience":
+        return draft.sections.experience.length ? (
+          <View style={styles.section}>
+            <SectionHeading title={labels.experience} />
+            <View style={{ gap: 6 }}>
+              {draft.sections.experience.map((job, idx) => {
+                const meta = [job.company, job.location, job.dates]
+                  .map((x) => x.trim())
+                  .filter(Boolean)
+                  .join(" | ");
+                return (
+                  <View
+                    key={`job-${idx}-${job.title}-${meta}`}
+                    style={styles.jobBlock}
+                  >
+                    {hasValue(job.title) ? (
+                      <Text style={styles.jobTitle}>{job.title}</Text>
+                    ) : null}
+                    {meta ? <Text style={styles.jobMeta}>{meta}</Text> : null}
+                    {job.highlights.length ? (
+                      <View style={styles.jobHighlights}>
+                        <BulletList items={job.highlights} />
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        ) : null;
+      case "projects":
+        return draft.showProjects && draft.sections.projects.length ? (
+          <View style={styles.section}>
+            <SectionHeading title={labels.projects} />
+            <BulletList items={draft.sections.projects} />
+          </View>
+        ) : null;
+      case "education": {
+        const educationItems = (draft.sections.education ?? []).filter((e) =>
+          [e.degree, e.institution, e.location, e.dates, e.coursework, e.honors].some(
+            (s) => s && s.trim().length > 0,
+          ),
+        );
+        if (!educationItems.length) return null;
+        return (
+          <View style={styles.section}>
+            <SectionHeading title={labels.education} />
+            <View style={{ gap: 0 }}>
+              {educationItems.map((e, idx) => {
+                const meta = [e.institution, e.location, e.dates]
+                  .map((x) => x.trim())
+                  .filter(Boolean)
+                  .join(" | ");
+                return (
+                  <View
+                    key={`edu-${idx}-${e.clientKey ?? e.degree}`}
+                    style={styles.educationBlock}
+                    wrap={false}
+                  >
+                    {hasValue(e.degree) ? <Text style={styles.jobTitle}>{e.degree}</Text> : null}
+                    {meta ? <Text style={styles.jobMeta}>{meta}</Text> : null}
+                    {hasValue(e.coursework) || hasValue(e.honors) ? (
+                      <View style={styles.jobHighlights}>
+                        {hasValue(e.coursework) ? (
+                          <Text style={styles.paragraph}>
+                            {labels.educationCoursework}: {e.coursework.trim()}
+                          </Text>
+                        ) : null}
+                        {hasValue(e.honors) ? (
+                          <Text
+                            style={[
+                              styles.paragraph,
+                              hasValue(e.coursework) ? { marginTop: 2 } : {},
+                            ]}
+                          >
+                            {labels.educationHonors}: {e.honors.trim()}
+                          </Text>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        );
+      }
+      case "languages":
+        return (draft.sections.languages ?? []).some((l) => l.name.trim()) ? (
+          <View style={styles.section}>
+            <SectionHeading title={labels.languages} />
+            <BulletList
+              items={(draft.sections.languages ?? [])
+                .filter((l) => l.name.trim())
+                .map((l) => formatResumeLanguageLine(draft.language, l.name, l.level))}
+            />
+          </View>
+        ) : null;
+      case "certificates":
+        return draft.showCertificates && draft.sections.certificates.length ? (
+          <View style={styles.section}>
+            <SectionHeading title={labels.certificates} />
+            <BulletList items={draft.sections.certificates} />
+          </View>
+        ) : null;
+      default:
+        return null;
+    }
+  }
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -374,74 +506,9 @@ export function ResumePdfDocument({ draft }: Props) {
           </View>
         ) : null}
 
-        {draft.sections.skills.length ? (
-          <View style={styles.section}>
-            <SectionHeading title={labels.skills} />
-            <BulletList items={draft.sections.skills} />
-          </View>
-        ) : null}
-
-        {draft.sections.experience.length ? (
-          <View style={styles.section}>
-            <SectionHeading title={labels.experience} />
-            <View style={{ gap: 6 }}>
-              {draft.sections.experience.map((job, idx) => {
-                const meta = [job.company, job.location, job.dates]
-                  .map((x) => x.trim())
-                  .filter(Boolean)
-                  .join(" | ");
-                return (
-                  <View
-                    key={`job-${idx}-${job.title}-${meta}`}
-                    style={styles.jobBlock}
-                  >
-                    {hasValue(job.title) ? (
-                      <Text style={styles.jobTitle}>{job.title}</Text>
-                    ) : null}
-                    {meta ? <Text style={styles.jobMeta}>{meta}</Text> : null}
-                    {job.highlights.length ? (
-                      <View style={styles.jobHighlights}>
-                        <BulletList items={job.highlights} />
-                      </View>
-                    ) : null}
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        ) : null}
-
-        {draft.showProjects && draft.sections.projects.length ? (
-          <View style={styles.section}>
-            <SectionHeading title={labels.projects} />
-            <BulletList items={draft.sections.projects} />
-          </View>
-        ) : null}
-
-        {draft.sections.education.length ? (
-          <View style={styles.section}>
-            <SectionHeading title={labels.education} />
-            <BulletList items={draft.sections.education} />
-          </View>
-        ) : null}
-
-        {(draft.sections.languages ?? []).some((l) => l.name.trim()) ? (
-          <View style={styles.section}>
-            <SectionHeading title={labels.languages} />
-            <BulletList
-              items={(draft.sections.languages ?? [])
-                .filter((l) => l.name.trim())
-                .map((l) => formatResumeLanguageLine(draft.language, l.name, l.level))}
-            />
-          </View>
-        ) : null}
-
-        {draft.showCertificates && draft.sections.certificates.length ? (
-          <View style={styles.section}>
-            <SectionHeading title={labels.certificates} />
-            <BulletList items={draft.sections.certificates} />
-          </View>
-        ) : null}
+        {sectionsOrder.map((sectionId) => (
+          <Fragment key={sectionId}>{pdfBodySection(sectionId)}</Fragment>
+        ))}
       </Page>
     </Document>
   );

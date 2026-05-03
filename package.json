@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "preview:static": "npx --yes serve@14 out"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

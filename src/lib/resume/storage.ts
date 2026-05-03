@@ -1,9 +1,10 @@
 import { newExperienceJobClientKey } from "./experience-id";
 import { normalizeStoredLanguageLevel } from "./language-levels";
+import { normalizeBodySectionsOrder } from "./body-section-order";
 import { DEFAULT_DRAFT, STORAGE_KEY } from "./types";
 import type { ResumeDraft } from "./types";
 import { isPresetSpokenLanguageName } from "./spoken-language-presets";
-import type { ExperienceJob, SpokenLanguageEntry } from "./types";
+import type { EducationEntry, ExperienceJob, SpokenLanguageEntry } from "./types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -63,6 +64,55 @@ function normalizeExperience(value: unknown): ExperienceJob[] {
   }));
 }
 
+function isEducationEntry(value: unknown): value is EducationEntry {
+  if (!isRecord(value)) return false;
+  const keyOk =
+    value.clientKey === undefined ||
+    (typeof value.clientKey === "string" && value.clientKey.length > 0);
+  return (
+    keyOk &&
+    typeof value.degree === "string" &&
+    typeof value.institution === "string" &&
+    typeof value.location === "string" &&
+    typeof value.dates === "string" &&
+    typeof value.coursework === "string" &&
+    typeof value.honors === "string"
+  );
+}
+
+function normalizeEducation(value: unknown): EducationEntry[] {
+  if (!Array.isArray(value)) return [];
+
+  if (isStringArray(value)) {
+    return value
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((degree) => ({
+        degree,
+        institution: "",
+        location: "",
+        dates: "",
+        coursework: "",
+        honors: "",
+        clientKey: newExperienceJobClientKey(),
+      }));
+  }
+
+  const entries = value.filter(isEducationEntry);
+  return entries.map((e) => ({
+    degree: e.degree,
+    institution: e.institution,
+    location: e.location,
+    dates: e.dates,
+    coursework: e.coursework,
+    honors: e.honors,
+    clientKey:
+      typeof e.clientKey === "string" && e.clientKey.length > 0
+        ? e.clientKey
+        : newExperienceJobClientKey(),
+  }));
+}
+
 function isSpokenLanguage(value: unknown): value is SpokenLanguageEntry {
   if (!isRecord(value)) return false;
   const customOk =
@@ -102,6 +152,7 @@ function mergeDraft(partial: unknown): ResumeDraft {
   return {
     ...DEFAULT_DRAFT,
     ...p,
+    sectionsOrder: normalizeBodySectionsOrder(p.sectionsOrder),
     header: {
       ...DEFAULT_DRAFT.header,
       ...(isRecord(p.header) ? p.header : null),
@@ -110,6 +161,7 @@ function mergeDraft(partial: unknown): ResumeDraft {
       ...DEFAULT_DRAFT.sections,
       ...(sections ? sections : null),
       experience: normalizeExperience(sections?.experience),
+      education: normalizeEducation(sections?.education),
       languages: normalizeLanguages(sections?.languages),
     },
   };

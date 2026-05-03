@@ -1,6 +1,6 @@
 import { newExperienceJobClientKey } from "./experience-id";
 import { defaultLanguageRows } from "./languages";
-import type { ExperienceJob, ResumeSections } from "./types";
+import type { EducationEntry, ExperienceJob, ResumeSections } from "./types";
 
 const SKILL_KEYWORDS = [
   "javascript",
@@ -188,12 +188,22 @@ export function parseSourceText(text: string): ResumeSections {
       ]
     : [];
 
+  const education: EducationEntry[] = buckets.education.map((line) => ({
+    clientKey: newExperienceJobClientKey(),
+    degree: line,
+    institution: "",
+    location: "",
+    dates: "",
+    coursework: "",
+    honors: "",
+  }));
+
   return {
     summary,
     skills,
     experience,
     projects: buckets.projects,
-    education: buckets.education,
+    education,
     languages: defaultLanguageRows(),
     certificates: buckets.certificates,
   };

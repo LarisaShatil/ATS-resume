@@ -36,6 +36,15 @@ export type ResumeLabels = {
   experience: string;
   projects: string;
   education: string;
+  educationDegree: string;
+  educationInstitution: string;
+  educationLocation: string;
+  educationCoursework: string;
+  educationHonors: string;
+  addEducation: string;
+  addEducationBelow: string;
+  removeEducation: string;
+  educationOrderHint: string;
   languages: string;
   languageName: string;
   languageProficiency: string;
@@ -48,6 +57,8 @@ export type ResumeLabels = {
   addLanguageBelow: string;
   removeLanguage: string;
   certificates: string;
+  /** Hint for drag-reordering body sections below Professional Summary. */
+  sectionReorderHint: string;
 };
 
 export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
@@ -60,7 +71,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     resetDraft: "Reset draft",
     generateFromText: "Generate sections from text",
     downloadPdf: "Download PDF",
-    contacts: "Contacts",
+    contacts: "Contact Information",
 
     fullName: "Full name",
     title: "Professional title",
@@ -87,6 +98,15 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     experience: "Work Experience",
     projects: "Projects",
     education: "Education",
+    educationDegree: "Degree / Program",
+    educationInstitution: "Institution",
+    educationLocation: "Location",
+    educationCoursework: "Relevant coursework",
+    educationHonors: "Honors / Awards",
+    addEducation: "Add education",
+    addEducationBelow: "Add below",
+    removeEducation: "Remove",
+    educationOrderHint: "Order: most recent first (drag to reorder).",
     languages: "Languages",
     languageName: "Language",
     languageProficiency: "Proficiency",
@@ -98,6 +118,8 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     addLanguageBelow: "Add below",
     removeLanguage: "Remove",
     certificates: "Certificates",
+    sectionReorderHint:
+      "Drag the handle on the left to reorder sections on your resume.",
   },
   uk: {
     appTitle: "ATS Генератор Резюме",
@@ -108,7 +130,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     resetDraft: "Скинути чернетку",
     generateFromText: "Згенерувати розділи з тексту",
     downloadPdf: "Завантажити PDF",
-    contacts: "Контакти",
+    contacts: "Контактна інформація",
 
     fullName: "ПІБ",
     title: "Професійна назва посади",
@@ -135,6 +157,15 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     experience: "Досвід роботи",
     projects: "Проєкти",
     education: "Освіта",
+    educationDegree: "Ступінь / Програма",
+    educationInstitution: "Заклад освіти",
+    educationLocation: "Локація",
+    educationCoursework: "Релевантні курси",
+    educationHonors: "Відзнаки / Нагороди",
+    addEducation: "Додати освіту",
+    addEducationBelow: "Додати нижче",
+    removeEducation: "Прибрати",
+    educationOrderHint: "Порядок: спочатку новіше (перетягніть, щоб змінити).",
     languages: "Мови",
     languageName: "Мова",
     languageProficiency: "Рівень",
@@ -146,6 +177,8 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     addLanguageBelow: "Додати нижче",
     removeLanguage: "Прибрати",
     certificates: "Сертифікати",
+    sectionReorderHint:
+      "Перетягніть ручку зліва, щоб змінити порядок розділів у резюме.",
   },
   ru: {
     appTitle: "ATS Генератор Резюме",
@@ -156,7 +189,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     resetDraft: "Сбросить черновик",
     generateFromText: "Сгенерировать разделы из текста",
     downloadPdf: "Скачать PDF",
-    contacts: "Контакты",
+    contacts: "Контактная информация",
 
     fullName: "ФИО",
     title: "Профессиональная роль",
@@ -183,6 +216,15 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     experience: "Опыт работы",
     projects: "Проекты",
     education: "Образование",
+    educationDegree: "Степень / Программа",
+    educationInstitution: "Учебное заведение",
+    educationLocation: "Локация",
+    educationCoursework: "Релевантные курсы",
+    educationHonors: "Награды / Отличия",
+    addEducation: "Добавить образование",
+    addEducationBelow: "Добавить ниже",
+    removeEducation: "Удалить",
+    educationOrderHint: "Порядок: сначала новее (перетащите, чтобы изменить).",
     languages: "Языки",
     languageName: "Язык",
     languageProficiency: "Уровень",
@@ -194,6 +236,8 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     addLanguageBelow: "Добавить ниже",
     removeLanguage: "Удалить",
     certificates: "Сертификаты",
+    sectionReorderHint:
+      "Перетащите маркер слева, чтобы изменить порядок разделов в резюме.",
   },
 };
 
