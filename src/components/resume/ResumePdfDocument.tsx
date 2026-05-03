@@ -133,6 +133,18 @@ function hasValue(v: string | undefined): boolean {
   return Boolean(v && v.trim().length > 0);
 }
 
+function isSafePdfImageSrc(src: string | undefined): boolean {
+  if (!src) return false;
+  const s = src.trim();
+  if (!s) return false;
+
+  // Avoid mixed-content: embedding http:// images into an https page can break export/download.
+  if (s.startsWith("http://")) return false;
+
+  // Allow https, blob URLs (uploaded images), and same-origin relative paths.
+  return s.startsWith("https://") || s.startsWith("blob:") || s.startsWith("/");
+}
+
 type ContactKind =
   | "phone"
   | "email"
@@ -309,7 +321,7 @@ export function ResumePdfDocument({ draft }: Props) {
   const labels = getLabels(draft.language);
   const h = draft.header;
 
-  const showPhoto = draft.showPhoto && hasValue(h.photoUrl);
+  const showPhoto = draft.showPhoto && isSafePdfImageSrc(h.photoUrl);
   const showLinkedIn = draft.showLinkedIn && hasValue(h.linkedIn);
   const showGithub = draft.showGithub && hasValue(h.github);
   const showPortfolio = draft.showPortfolio && hasValue(h.portfolio);
