@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "@react-pdf/renderer";
+import { formatResumeLanguageLine } from "@/lib/resume/language-levels";
 import type { ResumeDraft } from "@/lib/resume/types";
 import { getLabels } from "@/lib/resume/labels";
 
@@ -121,7 +122,13 @@ function hasValue(v: string | undefined): boolean {
   return Boolean(v && v.trim().length > 0);
 }
 
-type ContactKind = "phone" | "email" | "location" | "link" | "linkedin" | "github";
+type ContactKind =
+  | "phone"
+  | "email"
+  | "location"
+  | "link"
+  | "linkedin"
+  | "github";
 type ContactEntry = { kind: ContactKind; text: string };
 
 function PdfContactIcon({ kind }: { kind: ContactKind }) {
@@ -297,14 +304,24 @@ export function ResumePdfDocument({ draft }: Props) {
   const showPortfolio = draft.showPortfolio && hasValue(h.portfolio);
 
   const contactEntries: ContactEntry[] = [
-    hasValue(h.phone) ? ({ kind: "phone", text: h.phone.trim() } satisfies ContactEntry) : null,
-    hasValue(h.email) ? ({ kind: "email", text: h.email.trim() } satisfies ContactEntry) : null,
+    hasValue(h.phone)
+      ? ({ kind: "phone", text: h.phone.trim() } satisfies ContactEntry)
+      : null,
+    hasValue(h.email)
+      ? ({ kind: "email", text: h.email.trim() } satisfies ContactEntry)
+      : null,
     hasValue(h.location)
       ? ({ kind: "location", text: h.location.trim() } satisfies ContactEntry)
       : null,
-    showLinkedIn ? ({ kind: "linkedin", text: h.linkedIn!.trim() } satisfies ContactEntry) : null,
-    showGithub ? ({ kind: "github", text: h.github!.trim() } satisfies ContactEntry) : null,
-    showPortfolio ? ({ kind: "link", text: h.portfolio!.trim() } satisfies ContactEntry) : null,
+    showLinkedIn
+      ? ({ kind: "linkedin", text: h.linkedIn!.trim() } satisfies ContactEntry)
+      : null,
+    showGithub
+      ? ({ kind: "github", text: h.github!.trim() } satisfies ContactEntry)
+      : null,
+    showPortfolio
+      ? ({ kind: "link", text: h.portfolio!.trim() } satisfies ContactEntry)
+      : null,
   ].filter(Boolean) as ContactEntry[];
 
   const mid = Math.ceil(contactEntries.length / 2);
@@ -315,10 +332,14 @@ export function ResumePdfDocument({ draft }: Props) {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.headerRow}>
-          {showPhoto ? <PdfImage style={styles.photo} src={h.photoUrl!} /> : null}
+          {showPhoto ? (
+            <PdfImage style={styles.photo} src={h.photoUrl!} />
+          ) : null}
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{h.fullName || "Resume"}</Text>
-            {hasValue(h.title) ? <Text style={styles.title}>{h.title}</Text> : null}
+            {hasValue(h.title) ? (
+              <Text style={styles.title}>{h.title}</Text>
+            ) : null}
           </View>
         </View>
 
@@ -328,12 +349,18 @@ export function ResumePdfDocument({ draft }: Props) {
             <View style={{ flexDirection: "row", gap: 18 }}>
               <View style={{ flex: 1, gap: 4 }}>
                 {leftContacts.map((entry, idx) => (
-                  <PdfContactLine key={`l-${idx}-${entry.kind}-${entry.text}`} entry={entry} />
+                  <PdfContactLine
+                    key={`l-${idx}-${entry.kind}-${entry.text}`}
+                    entry={entry}
+                  />
                 ))}
               </View>
               <View style={{ flex: 1, gap: 4 }}>
                 {rightContacts.map((entry, idx) => (
-                  <PdfContactLine key={`r-${idx}-${entry.kind}-${entry.text}`} entry={entry} />
+                  <PdfContactLine
+                    key={`r-${idx}-${entry.kind}-${entry.text}`}
+                    entry={entry}
+                  />
                 ))}
               </View>
             </View>
@@ -364,8 +391,13 @@ export function ResumePdfDocument({ draft }: Props) {
                   .filter(Boolean)
                   .join(" | ");
                 return (
-                  <View key={`job-${idx}-${job.title}-${meta}`} style={styles.jobBlock}>
-                    {hasValue(job.title) ? <Text style={styles.jobTitle}>{job.title}</Text> : null}
+                  <View
+                    key={`job-${idx}-${job.title}-${meta}`}
+                    style={styles.jobBlock}
+                  >
+                    {hasValue(job.title) ? (
+                      <Text style={styles.jobTitle}>{job.title}</Text>
+                    ) : null}
                     {meta ? <Text style={styles.jobMeta}>{meta}</Text> : null}
                     {job.highlights.length ? (
                       <View style={styles.jobHighlights}>
@@ -393,6 +425,17 @@ export function ResumePdfDocument({ draft }: Props) {
           </View>
         ) : null}
 
+        {(draft.sections.languages ?? []).some((l) => l.name.trim()) ? (
+          <View style={styles.section}>
+            <SectionHeading title={labels.languages} />
+            <BulletList
+              items={(draft.sections.languages ?? [])
+                .filter((l) => l.name.trim())
+                .map((l) => formatResumeLanguageLine(draft.language, l.name, l.level))}
+            />
+          </View>
+        ) : null}
+
         {draft.showCertificates && draft.sections.certificates.length ? (
           <View style={styles.section}>
             <SectionHeading title={labels.certificates} />
@@ -403,4 +446,3 @@ export function ResumePdfDocument({ draft }: Props) {
     </Document>
   );
 }
-

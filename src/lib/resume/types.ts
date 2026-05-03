@@ -13,11 +13,23 @@ export interface ResumeHeader {
 }
 
 export interface ExperienceJob {
+  /** Stable id for list rendering and reordering (optional for older saved drafts). */
+  clientKey?: string;
   title: string;
   company: string;
   location: string;
   dates: string;
   highlights: string[];
+}
+
+/** One spoken language line on the resume (name + CEFR-style level). */
+export interface SpokenLanguageEntry {
+  clientKey?: string;
+  name: string;
+  /** Canonical level key, e.g. native, c1, b2 (see language-levels). */
+  level: string;
+  /** True when the user chose “Other” and types a custom language name. */
+  useCustomName?: boolean;
 }
 
 export interface ResumeSections {
@@ -26,6 +38,7 @@ export interface ResumeSections {
   experience: ExperienceJob[];
   projects: string[];
   education: string[];
+  languages: SpokenLanguageEntry[];
   certificates: string[];
 }
 
@@ -67,6 +80,7 @@ export const DEFAULT_DRAFT: ResumeDraft = {
     experience: [],
     projects: [],
     education: [],
+    languages: [],
     certificates: [],
   },
   showPhoto: false,

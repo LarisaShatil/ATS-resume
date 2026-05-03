@@ -1,10 +1,67 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
+
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  type DraggableAttributes,
+  type DraggableSyntheticListeners,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
 import type { ResumeLabels } from "@/lib/resume/labels";
-import type { ExperienceJob, ResumeSections } from "@/lib/resume/types";
+import { newExperienceJobClientKey } from "@/lib/resume/experience-id";
+import { LANGUAGE_LEVEL_DEFAULT, languageProficiencyOptions } from "@/lib/resume/language-levels";
+import {
+  isPresetSpokenLanguageName,
+  SPOKEN_LANGUAGE_CUSTOM,
+  spokenLanguageSelectOptions,
+  spokenLanguageSelectValue,
+} from "@/lib/resume/spoken-language-presets";
+import type {
+  ExperienceJob,
+  ResumeLanguage,
+  ResumeSections,
+  SpokenLanguageEntry,
+} from "@/lib/resume/types";
+
+import { ExperienceJobDatesField } from "./ExperienceJobDatesField";
+
+/** Shared layout + styles for per-row “Add below” / “Remove” actions (jobs + languages). */
+const ROW_ACTIONS_WRAP_CLASS = "mt-3 flex flex-wrap justify-end gap-2";
+const ROW_ACTION_BTN_ADD_CLASS =
+  "rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
+const ROW_ACTION_BTN_REMOVE_CLASS =
+  "rounded-md border border-rose-200 bg-white px-2.5 py-1 text-xs font-medium text-rose-700 shadow-sm hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
+
+const PLACEHOLDER_CLIENT_KEY = "__experience_editor_placeholder__";
+
+function placeholderJob(): ExperienceJob {
+  return {
+    clientKey: PLACEHOLDER_CLIENT_KEY,
+    title: "",
+    company: "",
+    location: "",
+    dates: "",
+    highlights: [],
+  };
+}
 
 type Props = {
   labels: ResumeLabels;
+  resumeLanguage: ResumeLanguage;
   sections: ResumeSections;
   showProjects: boolean;
   showCertificates: boolean;
@@ -101,21 +158,423 @@ function Field({
 }
 
 function newJob(): ExperienceJob {
-  return { title: "", company: "", location: "", dates: "", highlights: [] };
+  return {
+    clientKey: newExperienceJobClientKey(),
+    title: "",
+    company: "",
+    location: "",
+    dates: "",
+    highlights: [],
+  };
+}
+
+function DragGripHandle({
+  listeners,
+  attributes,
+  className = "",
+  title = "Drag to reorder",
+  ariaLabel = "Drag to reorder",
+}: {
+  listeners: DraggableSyntheticListeners | undefined;
+  attributes: DraggableAttributes;
+  className?: string;
+  title?: string;
+  ariaLabel?: string;
+}) {
+  return (
+    <button
+      type="button"
+      {...listeners}
+      {...attributes}
+      className={[
+        "flex h-9 w-8 shrink-0 touch-none cursor-grab items-center justify-center self-start rounded-md border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+        className,
+      ].join(" ")}
+      title={title}
+      aria-label={ariaLabel}
+    >
+      <svg
+        width="14"
+        height="18"
+        viewBox="0 0 14 18"
+        aria-hidden
+        className="text-slate-400"
+      >
+        <circle cx="4" cy="4" r="1.35" fill="currentColor" />
+        <circle cx="10" cy="4" r="1.35" fill="currentColor" />
+        <circle cx="4" cy="9" r="1.35" fill="currentColor" />
+        <circle cx="10" cy="9" r="1.35" fill="currentColor" />
+        <circle cx="4" cy="14" r="1.35" fill="currentColor" />
+        <circle cx="10" cy="14" r="1.35" fill="currentColor" />
+      </svg>
+    </button>
+  );
+}
+
+type JobRowFieldsProps = {
+  job: ExperienceJob;
+  idx: number;
+  resumeLanguage: ResumeLanguage;
+  patchJob: (idx: number, patch: Partial<ExperienceJob>) => void;
+  addJobAfter: (idx: number) => void;
+  removeJob: (idx: number) => void;
+};
+
+function ExperienceJobFields({
+  job,
+  idx,
+  resumeLanguage,
+  patchJob,
+  addJobAfter,
+  removeJob,
+}: JobRowFieldsProps) {
+  return (
+    <>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field
+          label="Job title"
+          value={job.title}
+          onChange={(v) => patchJob(idx, { title: v })}
+          placeholder="Backend Developer"
+        />
+        <Field
+          label="Company"
+          value={job.company}
+          onChange={(v) => patchJob(idx, { company: v })}
+          placeholder="House of Helsinki (Refufin)"
+        />
+        <Field
+          label="Location"
+          value={job.location}
+          onChange={(v) => patchJob(idx, { location: v })}
+          placeholder="Helsinki, Finland"
+        />
+        <ExperienceJobDatesField
+          resumeLanguage={resumeLanguage}
+          value={job.dates}
+          onChange={(v) => patchJob(idx, { dates: v })}
+        />
+      </div>
+
+      <div className="mt-3">
+        <TextArea
+          label="Highlights (one bullet per line)"
+          value={arrayToLines(job.highlights)}
+          onChange={(v) => patchJob(idx, { highlights: linesToArray(v) })}
+          rows={5}
+          placeholder="Built...\nImproved...\nAutomated..."
+        />
+      </div>
+
+      <div className={ROW_ACTIONS_WRAP_CLASS}>
+        <button type="button" onClick={() => addJobAfter(idx)} className={ROW_ACTION_BTN_ADD_CLASS}>
+          Add below
+        </button>
+        <button type="button" onClick={() => removeJob(idx)} className={ROW_ACTION_BTN_REMOVE_CLASS}>
+          Remove
+        </button>
+      </div>
+    </>
+  );
+}
+
+type SortableJobRowProps = JobRowFieldsProps & {
+  sortableId: string;
+};
+
+function SortableExperienceJobRow({
+  sortableId,
+  job,
+  idx,
+  resumeLanguage,
+  patchJob,
+  addJobAfter,
+  removeJob,
+}: SortableJobRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: sortableId,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={[
+        "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-opacity",
+        isDragging ? "z-10 opacity-80 ring-2 ring-indigo-400/50" : "",
+      ].join(" ")}
+    >
+      <div className="flex gap-3">
+        <div className="min-w-0 flex-1">
+          <ExperienceJobFields
+            job={job}
+            idx={idx}
+            resumeLanguage={resumeLanguage}
+            patchJob={patchJob}
+            addJobAfter={addJobAfter}
+            removeJob={removeJob}
+          />
+        </div>
+        <DragGripHandle
+          listeners={listeners}
+          attributes={attributes}
+          ariaLabel="Drag to reorder this job"
+        />
+      </div>
+    </div>
+  );
+}
+
+function StaticExperienceJobRow({
+  job,
+  idx,
+  resumeLanguage,
+  patchJob,
+  addJobAfter,
+  removeJob,
+}: JobRowFieldsProps) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <ExperienceJobFields
+        job={job}
+        idx={idx}
+        resumeLanguage={resumeLanguage}
+        patchJob={patchJob}
+        addJobAfter={addJobAfter}
+        removeJob={removeJob}
+      />
+    </div>
+  );
+}
+
+type LanguageRowFieldsProps = {
+  row: SpokenLanguageEntry;
+  idx: number;
+  labels: ResumeLabels;
+  resumeLanguage: ResumeLanguage;
+  spokenNameOptions: { value: string; label: string }[];
+  proficiencyOptions: { value: string; label: string; selectLabel: string }[];
+  patchLanguageRow: (idx: number, patch: Partial<SpokenLanguageEntry>) => void;
+  addLanguageAfter: (idx: number) => void;
+  removeLanguageRow: (idx: number) => void;
+};
+
+function LanguageRowContent({
+  row,
+  idx,
+  labels,
+  resumeLanguage,
+  spokenNameOptions,
+  proficiencyOptions,
+  patchLanguageRow,
+  addLanguageAfter,
+  removeLanguageRow,
+}: LanguageRowFieldsProps) {
+  const nameSelectVal = spokenLanguageSelectValue(
+    row.name,
+    resumeLanguage,
+    row.useCustomName,
+  );
+  const showCustomName = nameSelectVal === SPOKEN_LANGUAGE_CUSTOM;
+
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4">
+        <div className="min-w-0">
+          <div className="mb-1.5 text-xs font-medium text-slate-600">
+            {labels.languageChooseFromList}
+          </div>
+          <select
+            value={nameSelectVal}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "") {
+                patchLanguageRow(idx, { name: "", useCustomName: false });
+                return;
+              }
+              if (v === SPOKEN_LANGUAGE_CUSTOM) {
+                patchLanguageRow(idx, {
+                  useCustomName: true,
+                  name: isPresetSpokenLanguageName(row.name) ? "" : row.name,
+                });
+                return;
+              }
+              patchLanguageRow(idx, { name: v, useCustomName: false });
+            }}
+            className="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          >
+            <option value="">{labels.languageSelectHint}</option>
+            {spokenNameOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+            <option value={SPOKEN_LANGUAGE_CUSTOM}>{labels.languageOtherCustom}</option>
+          </select>
+          {showCustomName ? (
+            <input
+              type="text"
+              value={row.name}
+              onChange={(e) => patchLanguageRow(idx, { name: e.target.value })}
+              placeholder={labels.languageCustomPlaceholder}
+              className="mt-2 h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            />
+          ) : null}
+        </div>
+        <div className="min-w-0">
+          <div className="mb-1.5 text-xs font-medium text-slate-600">
+            {labels.languageProficiency}
+          </div>
+          <select
+            value={row.level}
+            onChange={(e) => patchLanguageRow(idx, { level: e.target.value })}
+            title={proficiencyOptions.find((o) => o.value === row.level)?.label}
+            className="h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          >
+            {proficiencyOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.selectLabel}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className={ROW_ACTIONS_WRAP_CLASS}>
+        <button type="button" onClick={() => addLanguageAfter(idx)} className={ROW_ACTION_BTN_ADD_CLASS}>
+          {labels.addLanguageBelow}
+        </button>
+        <button type="button" onClick={() => removeLanguageRow(idx)} className={ROW_ACTION_BTN_REMOVE_CLASS}>
+          {labels.removeLanguage}
+        </button>
+      </div>
+    </>
+  );
+}
+
+type SortableLanguageRowProps = LanguageRowFieldsProps & { sortableId: string };
+
+function SortableLanguageRow(props: SortableLanguageRowProps) {
+  const { sortableId, ...fieldProps } = props;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: sortableId,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={[
+        "rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-opacity",
+        isDragging ? "z-10 opacity-80 ring-2 ring-indigo-400/50" : "",
+      ].join(" ")}
+    >
+      <div className="flex gap-3">
+        <div className="min-w-0 flex-1">
+          <LanguageRowContent {...fieldProps} />
+        </div>
+        <DragGripHandle
+          listeners={listeners}
+          attributes={attributes}
+          ariaLabel="Drag to reorder this language"
+        />
+      </div>
+    </div>
+  );
+}
+
+function StaticLanguageRow(props: LanguageRowFieldsProps) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <LanguageRowContent {...props} />
+    </div>
+  );
 }
 
 export function ResumeSectionsEditor({
   labels,
+  resumeLanguage,
   sections,
   showProjects,
   showCertificates,
   onSectionsChange,
   onVisibilityChange,
 }: Props) {
-  const jobs = sections.experience ?? [];
-  const jobsForRender = jobs.length ? jobs : [newJob()];
+  const jobs = useMemo(() => sections.experience ?? [], [sections.experience]);
+  const languages = useMemo(() => sections.languages ?? [], [sections.languages]);
+  const proficiencyOptions = useMemo(
+    () => languageProficiencyOptions(resumeLanguage),
+    [resumeLanguage],
+  );
+  const spokenNameOptions = useMemo(
+    () => spokenLanguageSelectOptions(resumeLanguage),
+    [resumeLanguage],
+  );
+  const jobsForRender = jobs.length ? jobs : [placeholderJob()];
+  const canReorderJobs = jobs.length > 1;
+  const sortableReady =
+    canReorderJobs &&
+    jobs.every((j) => typeof j.clientKey === "string" && j.clientKey.length > 0);
+
+  const canReorderLanguages = languages.length > 1;
+  const sortableLanguagesReady =
+    canReorderLanguages &&
+    languages.every((l) => typeof l.clientKey === "string" && l.clientKey.length > 0);
+
+  useEffect(() => {
+    if (jobs.length === 0) return;
+    if (jobs.every((j) => j.clientKey && j.clientKey.length > 0)) return;
+    onSectionsChange({
+      experience: jobs.map((j) => ({
+        ...j,
+        clientKey: j.clientKey && j.clientKey.length > 0 ? j.clientKey : newExperienceJobClientKey(),
+      })),
+    });
+  }, [jobs, onSectionsChange]);
+
+  useEffect(() => {
+    if (languages.length === 0) return;
+    if (languages.every((l) => l.clientKey && l.clientKey.length > 0)) return;
+    onSectionsChange({
+      languages: languages.map((row) => ({
+        ...row,
+        clientKey: row.clientKey && row.clientKey.length > 0 ? row.clientKey : newExperienceJobClientKey(),
+      })),
+    });
+  }, [languages, onSectionsChange]);
+
+  const jobSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 6 },
+    }),
+  );
+
+  const languageSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 6 },
+    }),
+  );
 
   function patchJob(idx: number, patch: Partial<ExperienceJob>) {
+    if (jobs.length === 0 && idx === 0) {
+      onSectionsChange({ experience: [{ ...newJob(), ...patch }] });
+      return;
+    }
     const next = jobs.map((j, i) => (i === idx ? { ...j, ...patch } : j));
     onSectionsChange({ experience: next });
   }
@@ -126,8 +585,65 @@ export function ResumeSectionsEditor({
   }
 
   function addJobAfter(idx: number) {
+    if (jobs.length === 0) {
+      onSectionsChange({ experience: [newJob(), newJob()] });
+      return;
+    }
     const next = [...jobs.slice(0, idx + 1), newJob(), ...jobs.slice(idx + 1)];
     onSectionsChange({ experience: next });
+  }
+
+  function patchLanguageRow(idx: number, patch: Partial<SpokenLanguageEntry>) {
+    const next = languages.map((row, i) => (i === idx ? { ...row, ...patch } : row));
+    onSectionsChange({ languages: next });
+  }
+
+  function addLanguageRow() {
+    onSectionsChange({
+      languages: [
+        ...languages,
+        {
+          name: "",
+          level: LANGUAGE_LEVEL_DEFAULT,
+          clientKey: newExperienceJobClientKey(),
+          useCustomName: false,
+        },
+      ],
+    });
+  }
+
+  function addLanguageAfter(idx: number) {
+    const row: SpokenLanguageEntry = {
+      name: "",
+      level: LANGUAGE_LEVEL_DEFAULT,
+      clientKey: newExperienceJobClientKey(),
+      useCustomName: false,
+    };
+    onSectionsChange({
+      languages: [...languages.slice(0, idx + 1), row, ...languages.slice(idx + 1)],
+    });
+  }
+
+  function removeLanguageRow(idx: number) {
+    onSectionsChange({ languages: languages.filter((_, i) => i !== idx) });
+  }
+
+  function onJobDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = jobs.findIndex((j) => j.clientKey === active.id);
+    const newIndex = jobs.findIndex((j) => j.clientKey === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    onSectionsChange({ experience: arrayMove(jobs, oldIndex, newIndex) });
+  }
+
+  function onLanguageDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = languages.findIndex((l) => l.clientKey === active.id);
+    const newIndex = languages.findIndex((l) => l.clientKey === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    onSectionsChange({ languages: arrayMove(languages, oldIndex, newIndex) });
   }
 
   return (
@@ -170,7 +686,11 @@ export function ResumeSectionsEditor({
             <div className="text-xs font-medium text-slate-600">{labels.experience}</div>
             <button
               type="button"
-              onClick={() => onSectionsChange({ experience: [...jobsForRender, newJob()] })}
+              onClick={() =>
+                onSectionsChange({
+                  experience: jobs.length ? [...jobs, newJob()] : [newJob()],
+                })
+              }
               className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
             >
               Add job
@@ -178,63 +698,39 @@ export function ResumeSectionsEditor({
           </div>
 
           <div className="mt-3 grid gap-4">
-            {jobsForRender.map((job, idx) => (
-              <div key={idx} className="rounded-xl border border-slate-200 bg-white p-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field
-                    label="Job title"
-                    value={job.title}
-                    onChange={(v) => patchJob(idx, { title: v })}
-                    placeholder="Backend Developer"
-                  />
-                  <Field
-                    label="Company"
-                    value={job.company}
-                    onChange={(v) => patchJob(idx, { company: v })}
-                    placeholder="House of Helsinki (Refufin)"
-                  />
-                  <Field
-                    label="Location"
-                    value={job.location}
-                    onChange={(v) => patchJob(idx, { location: v })}
-                    placeholder="Helsinki, Finland"
-                  />
-                  <Field
-                    label="Dates"
-                    value={job.dates}
-                    onChange={(v) => patchJob(idx, { dates: v })}
-                    placeholder="Oct 2024 – Jun 2025"
-                  />
-                </div>
-
-                <div className="mt-3">
-                  <TextArea
-                    label="Highlights (one bullet per line)"
-                    value={arrayToLines(job.highlights)}
-                    onChange={(v) => patchJob(idx, { highlights: linesToArray(v) })}
-                    rows={5}
-                    placeholder="Built...\nImproved...\nAutomated..."
-                  />
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => addJobAfter(idx)}
-                    className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-                  >
-                    Add below
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeJob(idx)}
-                    className="rounded-md border border-rose-200 bg-white px-2.5 py-1 text-xs font-medium text-rose-700 shadow-sm hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))}
+            {sortableReady ? (
+              <DndContext sensors={jobSensors} collisionDetection={closestCenter} onDragEnd={onJobDragEnd}>
+                <SortableContext
+                  items={jobs.map((j) => j.clientKey!)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {jobs.map((job, idx) => (
+                    <SortableExperienceJobRow
+                      key={job.clientKey}
+                      sortableId={job.clientKey!}
+                      job={job}
+                      idx={idx}
+                      resumeLanguage={resumeLanguage}
+                      patchJob={patchJob}
+                      addJobAfter={addJobAfter}
+                      removeJob={removeJob}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            ) : (
+              jobsForRender.map((job, idx) => (
+                <StaticExperienceJobRow
+                  key={job.clientKey ?? `job-${idx}`}
+                  job={job}
+                  idx={idx}
+                  resumeLanguage={resumeLanguage}
+                  patchJob={patchJob}
+                  addJobAfter={addJobAfter}
+                  removeJob={removeJob}
+                />
+              ))
+            )}
           </div>
         </div>
         <TextArea
@@ -251,6 +747,63 @@ export function ResumeSectionsEditor({
           rows={4}
           placeholder="One item per line."
         />
+        <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-xs font-medium text-slate-600">{labels.languages}</div>
+            <button
+              type="button"
+              onClick={() => addLanguageRow()}
+              className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            >
+              {labels.addLanguage}
+            </button>
+          </div>
+          <div className="mt-3 space-y-3">
+            {sortableLanguagesReady ? (
+              <DndContext
+                sensors={languageSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={onLanguageDragEnd}
+              >
+                <SortableContext
+                  items={languages.map((l) => l.clientKey!)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {languages.map((row, idx) => (
+                    <SortableLanguageRow
+                      key={row.clientKey}
+                      sortableId={row.clientKey!}
+                      row={row}
+                      idx={idx}
+                      labels={labels}
+                      resumeLanguage={resumeLanguage}
+                      spokenNameOptions={spokenNameOptions}
+                      proficiencyOptions={proficiencyOptions}
+                      patchLanguageRow={patchLanguageRow}
+                      addLanguageAfter={addLanguageAfter}
+                      removeLanguageRow={removeLanguageRow}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            ) : (
+              languages.map((row, idx) => (
+                <StaticLanguageRow
+                  key={row.clientKey ?? `lang-${idx}`}
+                  row={row}
+                  idx={idx}
+                  labels={labels}
+                  resumeLanguage={resumeLanguage}
+                  spokenNameOptions={spokenNameOptions}
+                  proficiencyOptions={proficiencyOptions}
+                  patchLanguageRow={patchLanguageRow}
+                  addLanguageAfter={addLanguageAfter}
+                  removeLanguageRow={removeLanguageRow}
+                />
+              ))
+            )}
+          </div>
+        </div>
         <TextArea
           label={labels.certificates}
           value={arrayToLines(sections.certificates)}
@@ -262,4 +815,3 @@ export function ResumeSectionsEditor({
     </section>
   );
 }
-

@@ -1,0 +1,103 @@
+---
+description: Generate ATS-friendly resumes with safe structure, formatting, validation, and export rules
+alwaysApply: true
+---
+
+# ATS-Friendly Resume Creation Rule
+
+When creating, editing, or exporting a resume, prioritize **ATS parsing safety**, **clear recruiter scanning**, and **standard resume structure**.
+
+## 1. Layout requirements
+
+Use only ATS-safe layouts:
+
+- Single-column layout
+- Left-aligned text
+- No tables
+- No sidebars
+- No text boxes
+- No icons
+- No images or photos
+- No charts, progress bars, or skill bars
+- No important content inside headers or footers
+- No decorative elements that may affect parsing
+
+The resume must remain readable if copied into plain text.
+
+## 2. Required sections
+
+Use clear, standard section headings.
+
+Required sections:
+
+- Contact Information
+- Professional Summary
+- Skills
+- Work Experience
+- Education
+- Languages
+
+Optional sections:
+
+- Projects
+- Certifications
+- Volunteer Experience
+- Awards
+- Publications
+- Links
+
+
+## 3. Contact information
+
+Do not place contact details in a header/footer.
+
+## 4. Typography and spacing
+
+Use ATS-safe fonts:
+
+- Arial
+- Calibri
+- Helvetica
+- Times New Roman
+
+Recommended sizes:
+
+- Name: 16–20 pt
+- Section headings: 12–14 pt
+- Body text: 10–12 pt
+
+Spacing:
+
+- Line spacing: 1.0–1.15
+- Margins: 0.5–1 inch
+- Consistent spacing between sections
+
+Avoid excessive bold, italics, underlines, and decorative styling.
+
+## 5. Validation requirements
+
+Before downloading a resume, it should be checked for:
+- Missing required sections
+- Missing contact information
+- Inconsistent date formats
+
+Show clear warnings with practical fixes.
+
+## 6. Export requirements. User can check the view of the document in the chosen format (docx, pdf, txt). 
+
+Support ATS-safe exports:
+
+- DOCX
+- Text-based PDF
+- Plain text preview
+
+PDF must be selectable/searchable text.
+
+File naming format:
+
+`Full_name_Professional_title_Resume.docx`
+
+Example:
+
+`Larisa_Shatillo_Frontend_Developer_Resume.docx`
+

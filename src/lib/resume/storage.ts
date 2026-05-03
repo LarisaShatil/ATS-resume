@@ -1,6 +1,9 @@
+import { newExperienceJobClientKey } from "./experience-id";
+import { normalizeStoredLanguageLevel } from "./language-levels";
 import { DEFAULT_DRAFT, STORAGE_KEY } from "./types";
 import type { ResumeDraft } from "./types";
-import type { ExperienceJob } from "./types";
+import { isPresetSpokenLanguageName } from "./spoken-language-presets";
+import type { ExperienceJob, SpokenLanguageEntry } from "./types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -12,7 +15,11 @@ function isStringArray(value: unknown): value is string[] {
 
 function isExperienceJob(value: unknown): value is ExperienceJob {
   if (!isRecord(value)) return false;
+  const keyOk =
+    value.clientKey === undefined ||
+    (typeof value.clientKey === "string" && value.clientKey.length > 0);
   return (
+    keyOk &&
     typeof value.title === "string" &&
     typeof value.company === "string" &&
     typeof value.location === "string" &&
@@ -29,7 +36,16 @@ function normalizeExperience(value: unknown): ExperienceJob[] {
   if (isStringArray(value)) {
     const highlights = value.map((x) => x.trim()).filter(Boolean);
     return highlights.length
-      ? [{ title: "", company: "", location: "", dates: "", highlights }]
+      ? [
+          {
+            clientKey: newExperienceJobClientKey(),
+            title: "",
+            company: "",
+            location: "",
+            dates: "",
+            highlights,
+          },
+        ]
       : [];
   }
 
@@ -40,7 +56,42 @@ function normalizeExperience(value: unknown): ExperienceJob[] {
     location: j.location,
     dates: j.dates,
     highlights: j.highlights.map((x) => x.trim()).filter(Boolean),
+    clientKey:
+      typeof j.clientKey === "string" && j.clientKey.length > 0
+        ? j.clientKey
+        : newExperienceJobClientKey(),
   }));
+}
+
+function isSpokenLanguage(value: unknown): value is SpokenLanguageEntry {
+  if (!isRecord(value)) return false;
+  const customOk =
+    value.useCustomName === undefined || typeof value.useCustomName === "boolean";
+  return (
+    customOk &&
+    typeof value.name === "string" &&
+    typeof value.level === "string"
+  );
+}
+
+function normalizeLanguages(value: unknown): SpokenLanguageEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isSpokenLanguage).map((row) => {
+    const name = row.name.trim();
+    const useCustomName =
+      typeof row.useCustomName === "boolean"
+        ? row.useCustomName
+        : Boolean(name && !isPresetSpokenLanguageName(name));
+    return {
+      name,
+      level: normalizeStoredLanguageLevel(row.level),
+      useCustomName,
+      clientKey:
+        typeof row.clientKey === "string" && row.clientKey.length > 0
+          ? row.clientKey
+          : newExperienceJobClientKey(),
+    };
+  });
 }
 
 function mergeDraft(partial: unknown): ResumeDraft {
@@ -59,6 +110,7 @@ function mergeDraft(partial: unknown): ResumeDraft {
       ...DEFAULT_DRAFT.sections,
       ...(sections ? sections : null),
       experience: normalizeExperience(sections?.experience),
+      languages: normalizeLanguages(sections?.languages),
     },
   };
 }

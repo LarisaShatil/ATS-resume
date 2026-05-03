@@ -1,3 +1,5 @@
+import { newExperienceJobClientKey } from "./experience-id";
+import { defaultLanguageRows } from "./languages";
 import type { ExperienceJob, ResumeSections } from "./types";
 
 const SKILL_KEYWORDS = [
@@ -176,6 +178,7 @@ export function parseSourceText(text: string): ResumeSections {
   const experience: ExperienceJob[] = buckets.experience.length
     ? [
         {
+          clientKey: newExperienceJobClientKey(),
           title: "",
           company: "",
           location: "",
@@ -191,6 +194,7 @@ export function parseSourceText(text: string): ResumeSections {
     experience,
     projects: buckets.projects,
     education: buckets.education,
+    languages: defaultLanguageRows(),
     certificates: buckets.certificates,
   };
 }

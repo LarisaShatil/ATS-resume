@@ -36,6 +36,17 @@ export type ResumeLabels = {
   experience: string;
   projects: string;
   education: string;
+  languages: string;
+  languageName: string;
+  languageProficiency: string;
+  languageChooseFromList: string;
+  languageSelectHint: string;
+  languageOtherCustom: string;
+  languageCustomPlaceholder: string;
+  addLanguage: string;
+  /** Insert a language row after the current card (same idea as job “Add below”). */
+  addLanguageBelow: string;
+  removeLanguage: string;
   certificates: string;
 };
 
@@ -71,11 +82,21 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     sourceText: "Full career text / master profile",
     jobDescription: "Vacancy description",
 
-    summary: "Summary",
+    summary: "Professional Summary",
     skills: "Skills",
     experience: "Work Experience",
     projects: "Projects",
     education: "Education",
+    languages: "Languages",
+    languageName: "Language",
+    languageProficiency: "Proficiency",
+    languageChooseFromList: "Language",
+    languageSelectHint: "Select language…",
+    languageOtherCustom: "Other (type below)",
+    languageCustomPlaceholder: "e.g. Catalan, Persian…",
+    addLanguage: "Add language",
+    addLanguageBelow: "Add below",
+    removeLanguage: "Remove",
     certificates: "Certificates",
   },
   uk: {
@@ -109,11 +130,21 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     sourceText: "Повний текст кар’єри / майстер-профіль",
     jobDescription: "Опис вакансії",
 
-    summary: "Резюме",
+    summary: "Професійний профіль",
     skills: "Навички",
     experience: "Досвід роботи",
     projects: "Проєкти",
     education: "Освіта",
+    languages: "Мови",
+    languageName: "Мова",
+    languageProficiency: "Рівень",
+    languageChooseFromList: "Мова",
+    languageSelectHint: "Оберіть мову…",
+    languageOtherCustom: "Інша (введіть нижче)",
+    languageCustomPlaceholder: "наприклад, каталанська, перська…",
+    addLanguage: "Додати мову",
+    addLanguageBelow: "Додати нижче",
+    removeLanguage: "Прибрати",
     certificates: "Сертифікати",
   },
   ru: {
@@ -147,11 +178,21 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     sourceText: "Полный текст карьеры / мастер-профиль",
     jobDescription: "Описание вакансии",
 
-    summary: "О себе",
+    summary: "Профессиональный профиль",
     skills: "Навыки",
     experience: "Опыт работы",
     projects: "Проекты",
     education: "Образование",
+    languages: "Языки",
+    languageName: "Язык",
+    languageProficiency: "Уровень",
+    languageChooseFromList: "Язык",
+    languageSelectHint: "Выберите язык…",
+    languageOtherCustom: "Другой (введите ниже)",
+    languageCustomPlaceholder: "например, каталанский, персидский…",
+    addLanguage: "Добавить язык",
+    addLanguageBelow: "Добавить ниже",
+    removeLanguage: "Удалить",
     certificates: "Сертификаты",
   },
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { formatResumeLanguageLine } from "@/lib/resume/language-levels";
 import type { ResumeDraft } from "@/lib/resume/types";
 import type { ResumeLabels } from "@/lib/resume/labels";
 
@@ -151,12 +152,22 @@ export function ResumePreview({ labels, draft }: Props) {
   }> = [
     hasValue(h.phone) ? { kind: "phone", value: h.phone.trim() } : null,
     hasValue(h.email) ? { kind: "email", value: h.email.trim() } : null,
-    hasValue(h.location) ? { kind: "location", value: h.location.trim() } : null,
-    showLinkedIn
-      ? { kind: "linkedin", value: h.linkedIn!.trim(), href: h.linkedIn!.trim() }
+    hasValue(h.location)
+      ? { kind: "location", value: h.location.trim() }
       : null,
-    showGithub ? { kind: "github", value: h.github!.trim(), href: h.github!.trim() } : null,
-    showPortfolio ? { kind: "link", value: h.portfolio!.trim(), href: h.portfolio!.trim() } : null,
+    showLinkedIn
+      ? {
+          kind: "linkedin",
+          value: h.linkedIn!.trim(),
+          href: h.linkedIn!.trim(),
+        }
+      : null,
+    showGithub
+      ? { kind: "github", value: h.github!.trim(), href: h.github!.trim() }
+      : null,
+    showPortfolio
+      ? { kind: "link", value: h.portfolio!.trim(), href: h.portfolio!.trim() }
+      : null,
   ].filter(Boolean) as Array<{
     kind: "phone" | "email" | "location" | "link" | "linkedin" | "github";
     value: string;
@@ -177,10 +188,15 @@ export function ResumePreview({ labels, draft }: Props) {
             {labels.preview}
           </h2>
           <p className="mt-2 text-xs text-slate-500">
-            ATS-friendly layout (single column, standard headings, bullet lists).
+            ATS-friendly layout (single column, standard headings, bullet
+            lists).
           </p>
         </div>
-        <ResumePdfDownloadButton labels={labels} draft={draft} fileName={fileName} />
+        <ResumePdfDownloadButton
+          labels={labels}
+          draft={draft}
+          fileName={fileName}
+        />
       </div>
 
       <div className="mt-5 rounded-xl border border-slate-200 bg-white p-6">
@@ -217,7 +233,10 @@ export function ResumePreview({ labels, draft }: Props) {
             <div className="mt-3 grid grid-cols-2 gap-8">
               <div className="grid gap-2">
                 {contactLeft.map((c, idx) => (
-                  <div key={`${idx}-${c.value}`} className="flex items-center gap-3">
+                  <div
+                    key={`${idx}-${c.value}`}
+                    className="flex items-center gap-3"
+                  >
                     <ContactIcon kind={c.kind} />
                     <span className="text-sm text-slate-800">{c.value}</span>
                   </div>
@@ -225,7 +244,10 @@ export function ResumePreview({ labels, draft }: Props) {
               </div>
               <div className="grid gap-2">
                 {contactRight.map((c, idx) => (
-                  <div key={`${idx}-${c.value}`} className="flex items-center gap-3">
+                  <div
+                    key={`${idx}-${c.value}`}
+                    className="flex items-center gap-3"
+                  >
                     <ContactIcon kind={c.kind} />
                     {c.href ? (
                       <a
@@ -271,11 +293,20 @@ export function ResumePreview({ labels, draft }: Props) {
                   .filter(Boolean);
                 const meta = metaParts.join(" | ");
                 return (
-                  <section key={`${idx}-${job.title}-${meta}`} className="break-inside-avoid">
+                  <section
+                    key={`${idx}-${job.title}-${meta}`}
+                    className="break-inside-avoid"
+                  >
                     {hasValue(job.title) ? (
-                      <div className="text-sm font-semibold text-slate-900">{job.title}</div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {job.title}
+                      </div>
                     ) : null}
-                    {meta ? <div className="mt-0.5 text-xs text-slate-600">{meta}</div> : null}
+                    {meta ? (
+                      <div className="mt-0.5 text-xs text-slate-600">
+                        {meta}
+                      </div>
+                    ) : null}
                     {job.highlights.length ? (
                       <ul className="mt-2 list-disc space-y-1 pl-5">
                         {job.highlights.map((x, hIdx) => (
@@ -310,6 +341,20 @@ export function ResumePreview({ labels, draft }: Props) {
           </PreviewSection>
         ) : null}
 
+        {(draft.sections.languages ?? []).some((l) => l.name.trim()) ? (
+          <PreviewSection title={labels.languages}>
+            <ul className="list-disc space-y-1 pl-5">
+              {(draft.sections.languages ?? [])
+                .filter((l) => l.name.trim())
+                .map((l, idx) => (
+                  <li key={`${idx}-${l.clientKey ?? l.name}`}>
+                    {formatResumeLanguageLine(draft.language, l.name, l.level)}
+                  </li>
+                ))}
+            </ul>
+          </PreviewSection>
+        ) : null}
+
         {draft.showCertificates && draft.sections.certificates.length ? (
           <PreviewSection title={labels.certificates}>
             <ul className="list-disc space-y-1 pl-5">
@@ -323,4 +368,3 @@ export function ResumePreview({ labels, draft }: Props) {
     </section>
   );
 }
-
