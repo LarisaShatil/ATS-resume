@@ -5,6 +5,7 @@ import { DEFAULT_DRAFT, STORAGE_KEY } from "./types";
 import type { ResumeDraft } from "./types";
 import { isPresetSpokenLanguageName } from "./spoken-language-presets";
 import type {
+  CourseCertificationEntry,
   EducationEntry,
   ExperienceJob,
   ProjectEntry,
@@ -106,6 +107,50 @@ function isProjectEntry(value: unknown): value is ProjectEntry {
   );
 }
 
+function isCourseCertificationRecord(value: unknown): value is Record<
+  string,
+  unknown
+> {
+  if (!isRecord(value)) return false;
+  const keyOk =
+    value.clientKey === undefined ||
+    (typeof value.clientKey === "string" && value.clientKey.length > 0);
+  const bulletsOk =
+    value.bullets === undefined ||
+    (Array.isArray(value.bullets) &&
+      value.bullets.every((x) => typeof x === "string"));
+  const titleOk =
+    value.title === undefined || typeof value.title === "string";
+  return keyOk && bulletsOk && titleOk;
+}
+
+function normalizeCertificates(value: unknown): CourseCertificationEntry[] {
+  if (!Array.isArray(value)) return [];
+
+  if (isStringArray(value)) {
+    return value
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((title) => ({
+        clientKey: newExperienceJobClientKey(),
+        title,
+        bullets: [],
+      }));
+  }
+
+  const entries = value.filter(isCourseCertificationRecord);
+  return entries.map((c) => ({
+    title: typeof c.title === "string" ? c.title : "",
+    bullets: (Array.isArray(c.bullets) ? c.bullets : [])
+      .map((x) => (typeof x === "string" ? x.trim() : ""))
+      .filter(Boolean),
+    clientKey:
+      typeof c.clientKey === "string" && c.clientKey.length > 0
+        ? c.clientKey
+        : newExperienceJobClientKey(),
+  }));
+}
+
 function normalizeProjects(value: unknown): ProjectEntry[] {
   if (!Array.isArray(value)) return [];
 
@@ -156,7 +201,7 @@ function isEducationEntry(value: unknown): value is EducationEntry {
     typeof value.location === "string" &&
     typeof value.dates === "string" &&
     typeof value.coursework === "string" &&
-    typeof value.honors === "string"
+    (value.honors === undefined || typeof value.honors === "string")
   );
 }
 
@@ -173,7 +218,6 @@ function normalizeEducation(value: unknown): EducationEntry[] {
         location: "",
         dates: "",
         coursework: "",
-        honors: "",
         clientKey: newExperienceJobClientKey(),
       }));
   }
@@ -185,7 +229,6 @@ function normalizeEducation(value: unknown): EducationEntry[] {
     location: e.location,
     dates: e.dates,
     coursework: e.coursework,
-    honors: e.honors,
     clientKey:
       typeof e.clientKey === "string" && e.clientKey.length > 0
         ? e.clientKey
@@ -245,6 +288,7 @@ function mergeDraft(partial: unknown): ResumeDraft {
       education: normalizeEducation(sections?.education),
       languages: normalizeLanguages(sections?.languages),
       projects: normalizeProjects(sections?.projects),
+      certificates: normalizeCertificates(sections?.certificates),
     },
   };
 }

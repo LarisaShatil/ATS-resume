@@ -79,7 +79,7 @@ export function ResumeSourceInput({
           value={sourceText}
           onChange={(v) => onChange({ sourceText: v })}
           rows={8}
-          placeholder="Paste your master profile here (roles, achievements, skills, projects, education, certificates)."
+          placeholder="Paste your master profile here (roles, achievements, skills, projects, education, courses & certifications)."
         />
         <TextArea
           label={labels.jobDescription}

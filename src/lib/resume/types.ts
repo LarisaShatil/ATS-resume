@@ -30,7 +30,6 @@ export interface EducationEntry {
   location: string;
   dates: string;
   coursework: string;
-  honors: string;
 }
 
 /** One spoken language line on the resume (name + CEFR-style level). */
@@ -53,6 +52,14 @@ export interface ProjectEntry {
   bullets: string[];
 }
 
+/** One course or certification block (title line + optional bullet details). */
+export interface CourseCertificationEntry {
+  clientKey?: string;
+  /** e.g. "IT Project Management, Projector Institute" */
+  title: string;
+  bullets: string[];
+}
+
 export interface ResumeSections {
   summary: string;
   skills: string[];
@@ -60,7 +67,7 @@ export interface ResumeSections {
   projects: ProjectEntry[];
   education: EducationEntry[];
   languages: SpokenLanguageEntry[];
-  certificates: string[];
+  certificates: CourseCertificationEntry[];
 }
 
 export type SkillsHeadingVariant = "skills" | "technicalSkills";

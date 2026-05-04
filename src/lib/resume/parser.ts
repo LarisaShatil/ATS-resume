@@ -1,6 +1,7 @@
 import { newExperienceJobClientKey } from "./experience-id";
 import { defaultLanguageRows } from "./languages";
 import type {
+  CourseCertificationEntry,
   EducationEntry,
   ExperienceJob,
   ProjectEntry,
@@ -147,7 +148,7 @@ function extractBuckets(text: string) {
   const experience: string[] = [];
   const projects: string[] = [];
   const education: string[] = [];
-  const certificates: string[] = [];
+  const certificateLines: string[] = [];
 
   for (const line of lines) {
     const normalized = normalizeLine(line);
@@ -163,7 +164,7 @@ function extractBuckets(text: string) {
       education.push(normalized);
     }
     if (CERT_PATTERN.test(normalized)) {
-      certificates.push(normalized);
+      certificateLines.push(normalized);
     }
   }
 
@@ -171,7 +172,7 @@ function extractBuckets(text: string) {
     experience: uniq(experience, 25),
     projects: uniq(projects, 25),
     education: uniq(education, 25),
-    certificates: uniq(certificates, 25),
+    certificateLines: uniq(certificateLines, 25),
   };
 }
 
@@ -200,7 +201,6 @@ export function parseSourceText(text: string): ResumeSections {
     location: "",
     dates: "",
     coursework: "",
-    honors: "",
   }));
 
   const projects: ProjectEntry[] = buckets.projects.length
@@ -216,6 +216,13 @@ export function parseSourceText(text: string): ResumeSections {
       ]
     : [];
 
+  const certificates: CourseCertificationEntry[] =
+    buckets.certificateLines.map((title) => ({
+      clientKey: newExperienceJobClientKey(),
+      title,
+      bullets: [],
+    }));
+
   return {
     summary,
     skills,
@@ -223,7 +230,7 @@ export function parseSourceText(text: string): ResumeSections {
     projects,
     education,
     languages: defaultLanguageRows(),
-    certificates: buckets.certificates,
+    certificates,
   };
 }
 

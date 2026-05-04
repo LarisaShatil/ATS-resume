@@ -34,6 +34,7 @@ import {
   spokenLanguageSelectValue,
 } from "@/lib/resume/spoken-language-presets";
 import type {
+  CourseCertificationEntry,
   EducationEntry,
   ExperienceJob,
   ProjectEntry,
@@ -87,12 +88,14 @@ function linesToArray(text: string): string[] {
 
 function TextArea({
   label,
+  hint,
   value,
   onChange,
   rows,
   placeholder,
 }: {
   label: string;
+  hint?: string;
   value: string;
   onChange: (v: string) => void;
   rows: number;
@@ -102,6 +105,9 @@ function TextArea({
     <label className="block">
       {label ? (
         <div className="text-xs font-medium text-slate-600">{label}</div>
+      ) : null}
+      {hint ? (
+        <p className="mt-0.5 text-[11px] text-slate-500">{hint}</p>
       ) : null}
       <textarea
         value={value}
@@ -141,19 +147,27 @@ function Field({
   value,
   onChange,
   placeholder,
+  hint,
+  onBlur,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  hint?: string;
+  onBlur?: () => void;
 }) {
   return (
     <label className="block">
       <div className="text-xs font-medium text-slate-600">{label}</div>
+      {hint ? (
+        <p className="mt-0.5 text-[11px] text-slate-500">{hint}</p>
+      ) : null}
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         placeholder={placeholder}
         className="mt-1 h-7 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
       />
@@ -161,86 +175,42 @@ function Field({
   );
 }
 
-function addTechUnique(current: string[], next: string): string[] {
-  const t = next.replace(/\s+/g, " ").trim();
-  if (!t) return current;
-  const lower = t.toLowerCase();
-  if (current.some((x) => x.toLowerCase() === lower)) return current;
-  return [...current, t];
+/** Parse comma-separated tech line into trimmed, de-duplicated tokens (case-insensitive). */
+function commaSeparatedToTechArray(raw: string): string[] {
+  const parts = raw.split(",");
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const part of parts) {
+    const t = part.replace(/\s+/g, " ").trim();
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(t);
+  }
+  return out;
 }
 
-function ChipsInput({
-  label,
-  hint,
-  values,
-  onChange,
+function ProjectTechCommaField({
+  tech,
+  labels,
+  onSave,
 }: {
-  label: string;
-  hint: string;
-  values: string[];
-  onChange: (next: string[]) => void;
+  tech: string[];
+  labels: Pick<ResumeLabels, "projectTech" | "projectTechAddHint">;
+  onSave: (next: string[]) => void;
 }) {
-  const [draft, setDraft] = useState("");
-
-  function flushCommaSeparated(input: string) {
-    if (!input.includes(",")) {
-      setDraft(input);
-      return;
-    }
-    let next = [...values];
-    const parts = input.split(",");
-    const tail = parts.pop() ?? "";
-    for (const part of parts) {
-      next = addTechUnique(next, part);
-    }
-    onChange(next);
-    setDraft(tail);
-  }
+  const [draft, setDraft] = useState(() => (tech ?? []).join(", "));
 
   return (
-    <div>
-      <div className="text-xs font-medium text-slate-600">{label}</div>
-      <p className="mt-0.5 text-[11px] text-slate-500">{hint}</p>
-      <input
-        type="text"
-        value={draft}
-        onChange={(e) => flushCommaSeparated(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            if (!draft.trim()) return;
-            onChange(addTechUnique(values, draft));
-            setDraft("");
-            return;
-          }
-          if (e.key === "Backspace" && !draft && values.length) {
-            onChange(values.slice(0, -1));
-          }
-        }}
-        className="mt-1 h-7 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
-        placeholder="React"
-      />
-      {values.length ? (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {values.map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-800"
-            >
-              {tag}
-              <button
-                type="button"
-                className="rounded px-0.5 text-slate-500 hover:bg-slate-200/80 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60"
-                aria-label={`Remove ${tag}`}
-                onClick={() => onChange(values.filter((x) => x !== tag))}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </div>
+    <Field
+      label={labels.projectTech}
+      hint={labels.projectTechAddHint}
+      value={draft}
+      onChange={setDraft}
+      onBlur={() => onSave(commaSeparatedToTechArray(draft))}
+      placeholder="React, Vite, Node.js"
+    />
   );
 }
 
@@ -263,7 +233,6 @@ function newEducation(): EducationEntry {
     location: "",
     dates: "",
     coursework: "",
-    honors: "",
   };
 }
 
@@ -274,6 +243,14 @@ function newProject(): ProjectEntry {
     description: "",
     tech: [],
     link: "",
+    bullets: [],
+  };
+}
+
+function newCourse(): CourseCertificationEntry {
+  return {
+    clientKey: newExperienceJobClientKey(),
+    title: "",
     bullets: [],
   };
 }
@@ -372,7 +349,7 @@ function ExperienceJobFields({
           value={arrayToLines(job.highlights)}
           onChange={(v) => patchJob(idx, { highlights: linesToArray(v) })}
           rows={5}
-          placeholder="Built...\nImproved...\nAutomated..."
+          placeholder="Start with a verb (Built, Developed, Improved, Automated)"
         />
       </div>
 
@@ -523,20 +500,13 @@ function EducationEntryFields({
           onChange={(v) => patchEducation(idx, { dates: v })}
         />
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-1">
+      <div className="mt-3">
         <TextArea
           label={labels.educationCoursework}
           value={entry.coursework}
           onChange={(v) => patchEducation(idx, { coursework: v })}
           rows={2}
           placeholder="Course 1, Course 2, Course 3"
-        />
-        <TextArea
-          label={labels.educationHonors}
-          value={entry.honors}
-          onChange={(v) => patchEducation(idx, { honors: v })}
-          rows={2}
-          placeholder="Summa cum laude"
         />
       </div>
 
@@ -655,14 +625,6 @@ function ProjectFields({
         />
       </div>
       <div className="mt-3">
-        <ChipsInput
-          label={labels.projectTech}
-          hint={labels.projectTechAddHint}
-          values={project.tech ?? []}
-          onChange={(tech) => patchProject(idx, { tech })}
-        />
-      </div>
-      <div className="mt-3">
         <TextArea
           label={labels.projectBullets}
           value={arrayToLines(project.bullets ?? [])}
@@ -671,6 +633,14 @@ function ProjectFields({
           }
           rows={5}
           placeholder="Built…\nImproved…\nShipped…"
+        />
+      </div>
+      <div className="mt-3">
+        <ProjectTechCommaField
+          key={`${idx}-${JSON.stringify(project.tech ?? [])}`}
+          tech={project.tech ?? []}
+          labels={labels}
+          onSave={(next) => patchProject(idx, { tech: next })}
         />
       </div>
       <div className={ROW_ACTIONS_WRAP_CLASS}>
@@ -742,6 +712,113 @@ function StaticProjectRow(props: ProjectRowFieldsProps) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <ProjectFields {...props} />
+    </div>
+  );
+}
+
+type CourseRowFieldsProps = {
+  course: CourseCertificationEntry;
+  idx: number;
+  labels: ResumeLabels;
+  patchCourse: (idx: number, patch: Partial<CourseCertificationEntry>) => void;
+  addCourseAfter: (idx: number) => void;
+  removeCourse: (idx: number) => void;
+};
+
+function CourseFields({
+  course,
+  idx,
+  labels,
+  patchCourse,
+  addCourseAfter,
+  removeCourse,
+}: CourseRowFieldsProps) {
+  return (
+    <>
+      <Field
+        label={labels.courseCertTitle}
+        value={course.title}
+        onChange={(v) => patchCourse(idx, { title: v })}
+        placeholder="IT Project Management, Projector Institute"
+      />
+      <div className="mt-3">
+        <TextArea
+          label={labels.courseCertBullets}
+          value={arrayToLines(course.bullets ?? [])}
+          onChange={(v) => patchCourse(idx, { bullets: linesToArray(v) })}
+          rows={4}
+          placeholder={
+            "Agile, Scrum, Waterfall methodologies\nRisk & stakeholder management"
+          }
+        />
+      </div>
+      <div className={ROW_ACTIONS_WRAP_CLASS}>
+        <button
+          type="button"
+          onClick={() => addCourseAfter(idx)}
+          className={ROW_ACTION_BTN_ADD_CLASS}
+        >
+          {labels.addCourseBelow}
+        </button>
+        <button
+          type="button"
+          onClick={() => removeCourse(idx)}
+          className={ROW_ACTION_BTN_REMOVE_CLASS}
+        >
+          {labels.removeCourse}
+        </button>
+      </div>
+    </>
+  );
+}
+
+type SortableCourseRowProps = CourseRowFieldsProps & { sortableId: string };
+
+function SortableCourseRow(props: SortableCourseRowProps) {
+  const { sortableId, ...fieldProps } = props;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: sortableId,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={[
+        "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-opacity",
+        isDragging ? "z-10 opacity-80 ring-2 ring-indigo-400/50" : "",
+      ].join(" ")}
+    >
+      <div className="flex gap-3">
+        <div className="min-w-0 flex-1">
+          <CourseFields {...fieldProps} />
+        </div>
+        <DragGripHandle
+          listeners={listeners}
+          attributes={attributes}
+          ariaLabel="Drag to reorder this course"
+        />
+      </div>
+    </div>
+  );
+}
+
+function StaticCourseRow(props: CourseRowFieldsProps) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <CourseFields {...props} />
     </div>
   );
 }
@@ -984,6 +1061,10 @@ export function ResumeSectionsEditor({
     () => sections.projects ?? [],
     [sections.projects],
   );
+  const courses = useMemo(
+    () => sections.certificates ?? [],
+    [sections.certificates],
+  );
   const proficiencyOptions = useMemo(
     () => languageProficiencyOptions(resumeLanguage),
     [resumeLanguage],
@@ -1018,6 +1099,13 @@ export function ResumeSectionsEditor({
     canReorderProjects &&
     projects.every(
       (p) => typeof p.clientKey === "string" && p.clientKey.length > 0,
+    );
+
+  const canReorderCourses = courses.length > 1;
+  const sortableCoursesReady =
+    canReorderCourses &&
+    courses.every(
+      (c) => typeof c.clientKey === "string" && c.clientKey.length > 0,
     );
 
   useEffect(() => {
@@ -1076,6 +1164,20 @@ export function ResumeSectionsEditor({
     });
   }, [projects, onSectionsChange]);
 
+  useEffect(() => {
+    if (courses.length === 0) return;
+    if (courses.every((c) => c.clientKey && c.clientKey.length > 0)) return;
+    onSectionsChange({
+      certificates: courses.map((c) => ({
+        ...c,
+        clientKey:
+          c.clientKey && c.clientKey.length > 0
+            ? c.clientKey
+            : newExperienceJobClientKey(),
+      })),
+    });
+  }, [courses, onSectionsChange]);
+
   const jobSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -1104,6 +1206,15 @@ export function ResumeSectionsEditor({
   );
 
   const projectSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 6 },
+    }),
+  );
+
+  const courseSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
     }),
@@ -1249,6 +1360,34 @@ export function ResumeSectionsEditor({
     const newIndex = projects.findIndex((p) => p.clientKey === over.id);
     if (oldIndex < 0 || newIndex < 0) return;
     onSectionsChange({ projects: arrayMove(projects, oldIndex, newIndex) });
+  }
+
+  function patchCourse(idx: number, patch: Partial<CourseCertificationEntry>) {
+    const next = courses.map((c, i) => (i === idx ? { ...c, ...patch } : c));
+    onSectionsChange({ certificates: next });
+  }
+
+  function removeCourse(idx: number) {
+    const next = courses.filter((_, i) => i !== idx);
+    onSectionsChange({ certificates: next });
+  }
+
+  function addCourseAfter(idx: number) {
+    const next = [
+      ...courses.slice(0, idx + 1),
+      newCourse(),
+      ...courses.slice(idx + 1),
+    ];
+    onSectionsChange({ certificates: next });
+  }
+
+  function onCourseDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = courses.findIndex((c) => c.clientKey === active.id);
+    const newIndex = courses.findIndex((c) => c.clientKey === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    onSectionsChange({ certificates: arrayMove(courses, oldIndex, newIndex) });
   }
 
   function onSectionDragEnd(event: DragEndEvent) {
@@ -1604,20 +1743,66 @@ export function ResumeSectionsEditor({
       className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
       onFocusCapture={() => onActiveSectionChange?.("certificates")}
     >
-      <div className="flex items-center gap-1.5">
-        {dragHandle}
-        <div className="text-xs font-medium text-slate-600">
-          {labels.certificates}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-1.5">
+          {dragHandle}
+          <div className="text-xs font-medium text-slate-600">
+            {labels.certificates}
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={() =>
+            onSectionsChange({
+              certificates: [...courses, newCourse()],
+            })
+          }
+          className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        >
+          {labels.addCourse}
+        </button>
       </div>
-      <div className="mt-2">
-        <TextArea
-          label=""
-          value={arrayToLines(sections.certificates)}
-          onChange={(v) => onSectionsChange({ certificates: linesToArray(v) })}
-          rows={4}
-          placeholder="One item per line."
-        />
+
+      <div className="mt-2 grid gap-3">
+        {courses.length ? (
+          sortableCoursesReady ? (
+            <DndContext
+              sensors={courseSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onCourseDragEnd}
+            >
+              <SortableContext
+                items={courses.map((c) => c.clientKey!)}
+                strategy={verticalListSortingStrategy}
+              >
+                {courses.map((course, idx) => (
+                  <SortableCourseRow
+                    key={course.clientKey}
+                    sortableId={course.clientKey!}
+                    course={course}
+                    idx={idx}
+                    labels={labels}
+                    patchCourse={patchCourse}
+                    addCourseAfter={addCourseAfter}
+                    removeCourse={removeCourse}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          ) : (
+            courses.map((course, idx) => (
+              <StaticCourseRow
+                key={course.clientKey ?? `course-${idx}`}
+                course={course}
+                idx={idx}
+                labels={labels}
+                patchCourse={patchCourse}
+                addCourseAfter={addCourseAfter}
+                removeCourse={removeCourse}
+              />
+            ))
+          )
+        ) : null}
       </div>
     </div>
   );

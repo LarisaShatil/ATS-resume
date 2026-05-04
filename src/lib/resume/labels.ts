@@ -6,6 +6,9 @@ export type ResumeLabels = {
   source: string;
   sections: string;
   preview: string;
+  previewPdfUpdating: string;
+  previewPdfError: string;
+  previewPdfHint: string;
   resetDraft: string;
   generateFromText: string;
   downloadPdf: string;
@@ -41,7 +44,6 @@ export type ResumeLabels = {
   educationInstitution: string;
   educationLocation: string;
   educationCoursework: string;
-  educationHonors: string;
   addEducation: string;
   addEducationBelow: string;
   removeEducation: string;
@@ -58,6 +60,11 @@ export type ResumeLabels = {
   addLanguageBelow: string;
   removeLanguage: string;
   certificates: string;
+  courseCertTitle: string;
+  courseCertBullets: string;
+  addCourse: string;
+  addCourseBelow: string;
+  removeCourse: string;
   /** Hint for drag-reordering body sections below Professional Summary. */
   sectionReorderHint: string;
 
@@ -70,7 +77,7 @@ export type ResumeLabels = {
   addProjectBelow: string;
   removeProject: string;
   projectTechAddHint: string;
-  /** Plain prefix before comma-separated tech in preview/PDF (e.g. "Tech:"). */
+  /** Plain prefix before comma-separated tech in preview/PDF (e.g. "Tech Stack:"). */
   projectTechInlineLabel: string;
 };
 
@@ -81,6 +88,10 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     source: "Source text",
     sections: "Sections",
     preview: "Preview",
+    previewPdfUpdating: "Updating PDF preview…",
+    previewPdfError: "Could not generate PDF preview.",
+    previewPdfHint:
+      "Same layout as the downloaded PDF, including page breaks and page numbers.",
     resetDraft: "Reset draft",
     generateFromText: "Generate sections from text",
     downloadPdf: "Download PDF",
@@ -101,7 +112,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     showGithub: "Show GitHub",
     showPortfolio: "Show Portfolio",
     showProjects: "Show Projects",
-    showCertificates: "Show Certificates",
+    showCertificates: "Show Courses & Certifications",
 
     sourceText: "Full career text / master profile",
     jobDescription: "Vacancy description",
@@ -115,8 +126,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     educationDegree: "Degree / Program",
     educationInstitution: "Institution",
     educationLocation: "Location",
-    educationCoursework: "Key Courses",
-    educationHonors: "Honors / Awards",
+    educationCoursework: "Courses",
     addEducation: "Add education",
     addEducationBelow: "Add below",
     removeEducation: "Remove",
@@ -131,7 +141,12 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     addLanguage: "Add language",
     addLanguageBelow: "Add below",
     removeLanguage: "Remove",
-    certificates: "Certificates",
+    certificates: "Courses & Certifications",
+    courseCertTitle: "Course or certification",
+    courseCertBullets: "Details (optional, one per line)",
+    addCourse: "Add course",
+    addCourseBelow: "Add below",
+    removeCourse: "Remove",
     sectionReorderHint:
       "Drag the handle on the left to reorder sections on your resume.",
 
@@ -143,8 +158,8 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     addProject: "Add project",
     addProjectBelow: "Add below",
     removeProject: "Remove",
-    projectTechAddHint: "Press Enter or comma to add a tag",
-    projectTechInlineLabel: "Tech:",
+    projectTechAddHint: "Comma-separated list (matches PDF export).",
+    projectTechInlineLabel: "Tech Stack:",
   },
   uk: {
     appTitle: "ATS Генератор Резюме",
@@ -152,6 +167,10 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     source: "Вихідний текст",
     sections: "Розділи",
     preview: "Попередній перегляд",
+    previewPdfUpdating: "Оновлення перегляду PDF…",
+    previewPdfError: "Не вдалося згенерувати перегляд PDF.",
+    previewPdfHint:
+      "Той самий вигляд, що й у завантаженому PDF: розриви сторінок і номери сторінок.",
     resetDraft: "Скинути чернетку",
     generateFromText: "Згенерувати розділи з тексту",
     downloadPdf: "Завантажити PDF",
@@ -172,7 +191,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     showGithub: "Показувати GitHub",
     showPortfolio: "Показувати портфоліо",
     showProjects: "Показувати проєкти",
-    showCertificates: "Показувати сертифікати",
+    showCertificates: "Показувати курси та сертифікати",
 
     sourceText: "Повний текст кар’єри / майстер-профіль",
     jobDescription: "Опис вакансії",
@@ -187,7 +206,6 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     educationInstitution: "Заклад освіти",
     educationLocation: "Локація",
     educationCoursework: "Релевантні курси",
-    educationHonors: "Відзнаки / Нагороди",
     addEducation: "Додати освіту",
     addEducationBelow: "Додати нижче",
     removeEducation: "Прибрати",
@@ -202,7 +220,12 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     addLanguage: "Додати мову",
     addLanguageBelow: "Додати нижче",
     removeLanguage: "Прибрати",
-    certificates: "Сертифікати",
+    certificates: "Курси та сертифікати",
+    courseCertTitle: "Курс або сертифікація",
+    courseCertBullets: "Деталі (необов’язково, по одному на рядок)",
+    addCourse: "Додати курс",
+    addCourseBelow: "Додати нижче",
+    removeCourse: "Прибрати",
     sectionReorderHint:
       "Перетягніть ручку зліва, щоб змінити порядок розділів у резюме.",
 
@@ -214,8 +237,8 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     addProject: "Додати проєкт",
     addProjectBelow: "Додати нижче",
     removeProject: "Прибрати",
-    projectTechAddHint: "Enter або кома — додати тег",
-    projectTechInlineLabel: "Технології:",
+    projectTechAddHint: "Список через кому (як у PDF).",
+    projectTechInlineLabel: "Стек технологій:",
   },
   ru: {
     appTitle: "ATS Генератор Резюме",
@@ -223,6 +246,10 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     source: "Исходный текст",
     sections: "Разделы",
     preview: "Предпросмотр",
+    previewPdfUpdating: "Обновление предпросмотра PDF…",
+    previewPdfError: "Не удалось сформировать предпросмотр PDF.",
+    previewPdfHint:
+      "Такой же вид, как в скачанном PDF: разрывы страниц и номера страниц.",
     resetDraft: "Сбросить черновик",
     generateFromText: "Сгенерировать разделы из текста",
     downloadPdf: "Скачать PDF",
@@ -243,7 +270,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     showGithub: "Показывать GitHub",
     showPortfolio: "Показывать портфолио",
     showProjects: "Показывать проекты",
-    showCertificates: "Показывать сертификаты",
+    showCertificates: "Показывать курсы и сертификаты",
 
     sourceText: "Полный текст карьеры / мастер-профиль",
     jobDescription: "Описание вакансии",
@@ -258,7 +285,6 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     educationInstitution: "Учебное заведение",
     educationLocation: "Локация",
     educationCoursework: "Релевантные курсы",
-    educationHonors: "Награды / Отличия",
     addEducation: "Добавить образование",
     addEducationBelow: "Добавить ниже",
     removeEducation: "Удалить",
@@ -273,7 +299,12 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     addLanguage: "Добавить язык",
     addLanguageBelow: "Добавить ниже",
     removeLanguage: "Удалить",
-    certificates: "Сертификаты",
+    certificates: "Курсы и сертификаты",
+    courseCertTitle: "Курс или сертификат",
+    courseCertBullets: "Детали (необязательно, по одному на строку)",
+    addCourse: "Добавить курс",
+    addCourseBelow: "Добавить ниже",
+    removeCourse: "Удалить",
     sectionReorderHint:
       "Перетащите маркер слева, чтобы изменить порядок разделов в резюме.",
 
@@ -285,8 +316,8 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     addProject: "Добавить проект",
     addProjectBelow: "Добавить ниже",
     removeProject: "Удалить",
-    projectTechAddHint: "Enter или запятая — добавить тег",
-    projectTechInlineLabel: "Технологии:",
+    projectTechAddHint: "Список через запятую (как в PDF).",
+    projectTechInlineLabel: "Стек технологий:",
   },
 };
 

@@ -16,11 +16,13 @@ Use only ATS-safe layouts:
 - No tables
 - No sidebars
 - No text boxes
-- No icons
-- No images or photos
 - No charts, progress bars, or skill bars
 - No important content inside headers or footers
 - No decorative elements that may affect parsing
+
+ When ATS version is chosen:
+- No icons
+- No images or photos
 
 The resume must remain readable if copied into plain text.
 
@@ -32,9 +34,9 @@ Required sections:
 
 - Contact Information
 - Professional Summary
-- Skills
 - Work Experience
 - Education
+- Skills
 - Languages
 
 Optional sections:
@@ -68,8 +70,6 @@ Recommended sizes:
 
 Spacing:
 
-- Line spacing: 1.15
-- Margins: 1
 - Consistent spacing between sections
 
 Avoid excessive bold, italics, underlines, and decorative styling.

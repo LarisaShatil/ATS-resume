@@ -227,19 +227,6 @@ export function ResumeHeaderForm({
           }
           placeholder="+358 46 567 0000"
         />
-        <div className="-mt-2 text-xs text-slate-500 sm:col-span-2">
-          Recommended format: <span className="font-medium">+358 46 567 0000</span>{" "}
-          (international, with spaces). Your number will be kept as text for ATS.
-          <button
-            type="button"
-            onClick={() =>
-              onHeaderChange({ phone: formatRecommendedPhone(header.phone) })
-            }
-            className="ml-2 inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-          >
-            Format
-          </button>
-        </div>
         <Field
           label={labels.location}
           value={header.location}

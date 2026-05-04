@@ -23,8 +23,7 @@ type ActiveSectionId = "summary" | ResumeBodySectionId;
 export function ResumeGeneratorScreen() {
   const [draft, setDraft] = useState<ResumeDraft>(DEFAULT_DRAFT);
   const [sourceMessage, setSourceMessage] = useState<string | null>(null);
-  const [activeSectionId, setActiveSectionId] =
-    useState<ActiveSectionId>("summary");
+  const [, setActiveSectionId] = useState<ActiveSectionId>("summary");
   const skipFirstSaveRef = useRef(true);
 
   const labels = useMemo(() => getLabels(draft.language), [draft.language]);
@@ -143,11 +142,7 @@ export function ResumeGeneratorScreen() {
         </div>
 
         <div className="lg:sticky lg:top-6 lg:self-start">
-          <ResumePreview
-            labels={labels}
-            draft={draft}
-            activeSectionId={activeSectionId}
-          />
+          <ResumePreview labels={labels} draft={draft} />
           <p className="mt-3 text-xs text-slate-500">
             Note: PDF export works even if you never click “Generate” — you can
             edit all sections manually.
