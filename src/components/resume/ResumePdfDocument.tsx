@@ -179,6 +179,33 @@ function courseHasContent(c: CourseCertificationEntry): boolean {
   return hasValue(c.title) || bullets;
 }
 
+function CourseCard({
+  course,
+  idx,
+}: {
+  course: CourseCertificationEntry;
+  idx: number;
+}) {
+  const bullets = (course.bullets ?? []).map((s) => s.trim()).filter(Boolean);
+  return (
+    <View
+      key={`course-${idx}-${course.clientKey ?? course.title}`}
+      style={styles.jobBlock}
+    >
+      {hasValue(course.title) ? (
+        <View wrap={false}>
+          <Text style={styles.jobTitle}>{course.title.trim()}</Text>
+        </View>
+      ) : null}
+      {bullets.length ? (
+        <View style={styles.jobHighlights}>
+          <BulletList items={bullets} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 function pdfLinkSrc(raw: string): string | null {
   const t = raw.trim();
   if (!t) return null;
@@ -596,33 +623,24 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
           courseHasContent,
         );
         if (!draft.showCertificates || !courseItems.length) return null;
+        const [firstCourse, ...restCourses] = courseItems;
         return (
           <View style={styles.section}>
-            <SectionHeading title={labels.certificates} />
-            <View style={{ gap: 6 }}>
-              {courseItems.map((c, idx) => {
-                const bullets = (c.bullets ?? [])
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-                return (
-                  <View
-                    key={`course-${idx}-${c.clientKey ?? c.title}`}
-                    style={styles.jobBlock}
-                  >
-                    {hasValue(c.title) ? (
-                      <View wrap={false}>
-                        <Text style={styles.jobTitle}>{c.title.trim()}</Text>
-                      </View>
-                    ) : null}
-                    {bullets.length ? (
-                      <View style={styles.jobHighlights}>
-                        <BulletList items={bullets} />
-                      </View>
-                    ) : null}
-                  </View>
-                );
-              })}
+            <View wrap={false}>
+              <SectionHeading title={labels.certificates} />
+              <CourseCard course={firstCourse} idx={0} />
             </View>
+            {restCourses.length ? (
+              <View style={{ gap: 6 }}>
+                {restCourses.map((course, idx) => (
+                  <CourseCard
+                    key={`course-${idx + 1}-${course.clientKey ?? course.title}`}
+                    course={course}
+                    idx={idx + 1}
+                  />
+                ))}
+              </View>
+            ) : null}
           </View>
         );
       }
