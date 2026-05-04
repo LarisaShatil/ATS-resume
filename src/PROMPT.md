@@ -17,7 +17,6 @@ Requirements:
 - Optional: Certifications, Languages
 
 2. ATS RULES:
-- Use simple, clean formatting (no tables, no columns, no graphics)
 - Use standard section headings (Experience, Education, Skills)
 - Ensure high keyword match with the job description
 - Avoid icons or special characters
@@ -46,7 +45,6 @@ Example:
 6. OUTPUT:
 - Clean, well-structured resume
 - ATS-optimized wording
-- No design elements, only content
 
 Input data:
 [PASTE RESUME OR USER DATA HERE]
