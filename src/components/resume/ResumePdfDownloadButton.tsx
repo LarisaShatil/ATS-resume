@@ -4,6 +4,7 @@ import { pdf } from "@react-pdf/renderer";
 import { useCallback, useState } from "react";
 import type { ResumeDraft } from "@/lib/resume/types";
 import type { ResumeLabels } from "@/lib/resume/labels";
+import { pdfAssetBaseUrlFromWindow } from "@/lib/resume/asset-base-url";
 import { ResumePdfDocument } from "./ResumePdfDocument";
 
 type Props = {
@@ -33,8 +34,7 @@ export function ResumePdfDownloadButton({ labels, draft, fileName, variant }: Pr
 
     setLoading(true);
     try {
-      const assetBaseUrl =
-        typeof window !== "undefined" ? window.location.origin : undefined;
+      const assetBaseUrl = pdfAssetBaseUrlFromWindow();
       const blob = await pdf(
         <ResumePdfDocument
           draft={draft}
