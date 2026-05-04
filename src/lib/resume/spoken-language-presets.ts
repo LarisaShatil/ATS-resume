@@ -68,3 +68,16 @@ export function spokenLanguageSelectValue(
 export function isPresetSpokenLanguageName(name: string): boolean {
   return PRESETS.some((p) => presetMatchesName(p, name));
 }
+
+/** If `name` matches a preset (any locale spelling), return the preset label for `lang`. */
+export function presetSpokenLanguageNameForLocale(
+  name: string,
+  lang: ResumeLanguage,
+): string | null {
+  const n = name.trim();
+  if (!n) return null;
+  for (const p of PRESETS) {
+    if (presetMatchesName(p, n)) return p[lang];
+  }
+  return null;
+}

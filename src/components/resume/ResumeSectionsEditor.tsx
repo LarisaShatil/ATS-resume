@@ -661,7 +661,7 @@ function SortableExperienceJobRow({
       ref={setNodeRef}
       style={style}
       className={[
-        "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-opacity",
+        "rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-opacity",
         isDragging ? "z-10 opacity-80 ring-2 ring-indigo-400/50" : "",
       ].join(" ")}
     >
@@ -695,7 +695,7 @@ function StaticExperienceJobRow({
   removeJob,
 }: JobRowFieldsProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
       <ExperienceJobFields
         job={job}
         idx={idx}
@@ -811,7 +811,7 @@ function SortableEducationRow(props: SortableEducationRowProps) {
       ref={setNodeRef}
       style={style}
       className={[
-        "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-opacity",
+        "rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-opacity",
         isDragging ? "z-10 opacity-80 ring-2 ring-indigo-400/50" : "",
       ].join(" ")}
     >
@@ -831,7 +831,7 @@ function SortableEducationRow(props: SortableEducationRowProps) {
 
 function StaticEducationRow(props: EducationRowFieldsProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
       <EducationEntryFields {...props} />
     </div>
   );
@@ -861,7 +861,7 @@ function ProjectFields({
           label={labels.projectName}
           value={project.name}
           onChange={(v) => patchProject(idx, { name: v })}
-          placeholder="ATS Resume Generator"
+          placeholder="ATS Resume"
         />
         <Field
           label={labels.projectLink}
@@ -951,7 +951,7 @@ function SortableProjectRow(props: SortableProjectRowProps) {
       ref={setNodeRef}
       style={style}
       className={[
-        "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-opacity",
+        "rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-opacity",
         isDragging ? "z-10 opacity-80 ring-2 ring-indigo-400/50" : "",
       ].join(" ")}
     >
@@ -971,7 +971,7 @@ function SortableProjectRow(props: SortableProjectRowProps) {
 
 function StaticProjectRow(props: ProjectRowFieldsProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
       <ProjectFields {...props} />
     </div>
   );
@@ -1058,7 +1058,7 @@ function SortableCourseRow(props: SortableCourseRowProps) {
       ref={setNodeRef}
       style={style}
       className={[
-        "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-opacity",
+        "rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-opacity",
         isDragging ? "z-10 opacity-80 ring-2 ring-indigo-400/50" : "",
       ].join(" ")}
     >
@@ -1078,7 +1078,7 @@ function SortableCourseRow(props: SortableCourseRowProps) {
 
 function StaticCourseRow(props: CourseRowFieldsProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
       <CourseFields {...props} />
     </div>
   );
@@ -1269,7 +1269,7 @@ function SortableLanguageRow(props: SortableLanguageRowProps) {
       ref={setNodeRef}
       style={style}
       className={[
-        "rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-opacity",
+        "rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-opacity",
         isDragging ? "z-10 opacity-80 ring-2 ring-indigo-400/50" : "",
       ].join(" ")}
     >
@@ -1289,7 +1289,7 @@ function SortableLanguageRow(props: SortableLanguageRowProps) {
 
 function StaticLanguageRow(props: LanguageRowFieldsProps) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
       <LanguageRowContent {...props} />
     </div>
   );
@@ -1662,7 +1662,7 @@ export function ResumeSectionsEditor({
 
   const skillsEditor = (dragHandle: ReactNode) => (
     <div
-      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-2.5"
       onFocusCapture={() => onActiveSectionChange?.("skills")}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1724,7 +1724,7 @@ export function ResumeSectionsEditor({
 
   const experienceEditor = (dragHandle: ReactNode) => (
     <div
-      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-2.5"
       onFocusCapture={() => onActiveSectionChange?.("experience")}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1748,7 +1748,7 @@ export function ResumeSectionsEditor({
         </button>
       </div>
 
-      <div className="mt-2 grid gap-3">
+      <div className="mt-2 grid gap-2.5">
         {jobs.length ? (
           sortableReady ? (
             <DndContext
@@ -1794,7 +1794,7 @@ export function ResumeSectionsEditor({
 
   const projectsEditor = (dragHandle: ReactNode) => (
     <div
-      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-2.5"
       onFocusCapture={() => onActiveSectionChange?.("projects")}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1818,7 +1818,7 @@ export function ResumeSectionsEditor({
         </button>
       </div>
 
-      <div className="mt-2 grid gap-3">
+      <div className="mt-2 grid gap-2.5">
         {projects.length ? (
           sortableProjectsReady ? (
             <DndContext
@@ -1864,7 +1864,7 @@ export function ResumeSectionsEditor({
 
   const educationEditor = (dragHandle: ReactNode) => (
     <div
-      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-2.5"
       onFocusCapture={() => onActiveSectionChange?.("education")}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1891,7 +1891,7 @@ export function ResumeSectionsEditor({
         <p className="mt-2 text-xs text-slate-500">{labels.educationOrderHint}</p>
       ) : null}
 
-      <div className="mt-2 grid gap-3">
+      <div className="mt-2 grid gap-2.5">
         {education.length ? (
           sortableEducationReady ? (
             <DndContext
@@ -1939,7 +1939,7 @@ export function ResumeSectionsEditor({
 
   const languagesEditor = (dragHandle: ReactNode) => (
     <div
-      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-2.5"
       onFocusCapture={() => onActiveSectionChange?.("languages")}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1958,7 +1958,7 @@ export function ResumeSectionsEditor({
           {labels.addLanguage}
         </button>
       </div>
-      <div className="mt-2 space-y-2.5">
+      <div className="mt-2 space-y-2">
         {sortableLanguagesReady ? (
           <DndContext
             sensors={languageSensors}
@@ -2008,7 +2008,7 @@ export function ResumeSectionsEditor({
 
   const certificatesEditor = (dragHandle: ReactNode) => (
     <div
-      className="rounded-xl border border-slate-200 bg-slate-50/40 p-3"
+      className="rounded-xl border border-slate-200 bg-slate-50/40 p-2.5"
       onFocusCapture={() => onActiveSectionChange?.("certificates")}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -2032,7 +2032,7 @@ export function ResumeSectionsEditor({
         </button>
       </div>
 
-      <div className="mt-2 grid gap-3">
+      <div className="mt-2 grid gap-2.5">
         {courses.length ? (
           sortableCoursesReady ? (
             <DndContext

@@ -12,6 +12,7 @@ import type {
 import { getLabels } from "@/lib/resume/labels";
 import { loadDraft, resetDraft, saveDraft } from "@/lib/resume/storage";
 import { parseSourceText } from "@/lib/resume/parser";
+import { presetSpokenLanguageNameForLocale } from "@/lib/resume/spoken-language-presets";
 import { ResumeHeaderForm } from "./ResumeHeaderForm";
 import { ResumeLanguageSelect } from "./ResumeLanguageSelect";
 import { ResumePreview } from "./ResumePreview";
@@ -89,7 +90,20 @@ export function ResumeGeneratorScreen() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <ResumeLanguageSelect
             value={draft.language}
-            onChange={(language: ResumeLanguage) => patchDraft({ language })}
+            onChange={(language: ResumeLanguage) =>
+              setDraft((d) => {
+                const nextLanguages = (d.sections.languages ?? []).map((row) => {
+                  if (row.useCustomName) return row;
+                  const localized = presetSpokenLanguageNameForLocale(row.name, language);
+                  return localized ? { ...row, name: localized } : row;
+                });
+                return {
+                  ...d,
+                  language,
+                  sections: { ...d.sections, languages: nextLanguages },
+                };
+              })
+            }
           />
           <button
             type="button"

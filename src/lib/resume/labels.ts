@@ -84,7 +84,7 @@ export type ResumeLabels = {
 
 export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
   en: {
-    appTitle: "ATS Resume Generator",
+    appTitle: "ATS Resume",
     header: "Header",
     source: "Source text",
     sections: "Sections",
@@ -164,7 +164,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     projectTechInlineLabel: "Tech Stack:",
   },
   uk: {
-    appTitle: "ATS Генератор Резюме",
+    appTitle: "ATS Резюме",
     header: "Заголовок",
     source: "Вихідний текст",
     sections: "Розділи",
@@ -244,7 +244,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     projectTechInlineLabel: "Стек технологій:",
   },
   ru: {
-    appTitle: "ATS Генератор Резюме",
+    appTitle: "ATS Резюме",
     header: "Шапка",
     source: "Исходный текст",
     sections: "Разделы",

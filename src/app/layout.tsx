@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ATS Resume Generator",
+  title: "ATS Resume",
   description: "Generate an ATS-friendly resume and export to PDF.",
 };
 

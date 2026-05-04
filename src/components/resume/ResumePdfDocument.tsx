@@ -190,6 +190,9 @@ const styles = StyleSheet.create({
   projectTechLine: {
     marginTop: 4,
   },
+  linkNoUnderline: {
+    textDecoration: "none",
+  },
   jobHighlights: {
     marginTop: T.jobBlock.highlightsMarginTop,
   },
@@ -584,15 +587,22 @@ export function ResumePdfDocument({
                 const href = hasValue(p.link) ? pdfLinkSrc(p.link) : null;
                 const showProjectPhoto =
                   variant === "recruiter" && isSafePdfImageSrc(p.photoUrl);
+                const photoNode = showProjectPhoto ? (
+                  <PdfImage style={styles.projectPhoto} src={p.photoUrl!} />
+                ) : null;
                 return (
                   <View
                     key={`proj-${idx}-${p.clientKey ?? p.name}`}
                     style={styles.jobBlock}
                   >
                     <View style={styles.projectRow}>
-                      {showProjectPhoto ? (
-                        <PdfImage style={styles.projectPhoto} src={p.photoUrl!} />
-                      ) : null}
+                      {href ? (
+                        <Link src={href} style={styles.linkNoUnderline}>
+                          {photoNode}
+                        </Link>
+                      ) : (
+                        photoNode
+                      )}
                       <View style={{ flex: 1 }}>
                         {hasValue(p.name) || hasValue(p.link) ? (
                           <View wrap={false}>
@@ -607,7 +617,7 @@ export function ResumePdfDocument({
                           </Text>
                         ) : null}
                         {hasValue(p.link) && href ? (
-                          <Link src={href} style={styles.jobMeta}>
+                          <Link src={href} style={[styles.jobMeta, styles.linkNoUnderline]}>
                             {p.link.trim()}
                           </Link>
                         ) : hasValue(p.link) ? (
