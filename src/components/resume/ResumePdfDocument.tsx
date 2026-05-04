@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import {
   Document,
+  Font,
   Image as PdfImage,
   Link,
   Page,
@@ -19,142 +20,196 @@ import type {
   ResumeDraft,
 } from "@/lib/resume/types";
 import { getLabels } from "@/lib/resume/labels";
+import { resumePdfColors, resumePdfTheme } from "@/lib/resume/pdf-theme";
 
 type Props = {
   draft: ResumeDraft;
   variant?: "ats" | "recruiter";
+  assetBaseUrl?: string;
 };
 
-/** Orphan control for section titles only (pt); avoid large blank tails on page 1. */
-const SECTION_HEADING_MIN_PRESENCE_AHEAD = 52;
+// Ensure Cyrillic (Ukrainian/Russian) renders correctly in PDF output.
+// We embed a font subset that includes Cyrillic glyphs.
+let fontRegisteredForBaseUrl: string | null = null;
+function ensurePdfFontsRegistered(assetBaseUrl: string) {
+  if (!assetBaseUrl) return;
+  if (fontRegisteredForBaseUrl === assetBaseUrl) return;
+  fontRegisteredForBaseUrl = assetBaseUrl;
+
+  const base = assetBaseUrl.replace(/\/+$/, "");
+  const regularSrc = `${base}/fonts/NotoSans-Regular.ttf`;
+  const boldSrc = `${base}/fonts/NotoSans-Bold.ttf`;
+
+  Font.register({
+    family: "NotoSansCyrillic",
+    fonts: [
+      { src: regularSrc, fontWeight: 400 },
+      { src: boldSrc, fontWeight: 700 },
+    ],
+  });
+}
+
+const T = resumePdfTheme;
+const C = resumePdfColors;
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 28,
-    paddingBottom: 32,
-    paddingLeft: 36,
-    paddingRight: 36,
-    fontSize: 10.5,
-    fontFamily: "Helvetica",
-    color: "#111827",
-    backgroundColor: "#ffffff",
-    lineHeight: 1.25,
+    paddingTop: T.page.paddingTop,
+    paddingBottom: T.page.paddingBottom,
+    paddingLeft: T.page.paddingHorizontal,
+    paddingRight: T.page.paddingHorizontal,
+    fontSize: T.page.fontSize,
+    color: C.textPrimary,
+    backgroundColor: C.white,
+    lineHeight: T.page.lineHeight,
   },
   headerRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: T.header.rowGap,
     alignItems: "center",
   },
+  headerNameColumn: {
+    flex: 1,
+  },
   photo: {
-    width: 76,
-    height: 76,
+    width: T.header.photoSize,
+    height: T.header.photoSize,
     objectFit: "cover",
     borderRadius: 999,
   },
   name: {
-    fontSize: 21,
+    fontSize: T.header.nameFontSize,
     fontWeight: 700,
-    lineHeight: 1.1,
+    lineHeight: T.header.nameLineHeight,
   },
   title: {
-    marginTop: 2,
-    fontSize: 11,
-    color: "#374151",
+    marginTop: T.header.titleMarginTop,
+    fontSize: T.header.titleFontSize,
+    color: C.textSecondary,
     textTransform: "uppercase",
   },
   contactRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: T.contact.rowGap,
   },
   contactIcon: {
-    width: 12,
-    height: 12,
+    width: T.contact.iconSize,
+    height: T.contact.iconSize,
   },
   contactText: {
-    fontSize: 9.5,
-    color: "#374151",
+    fontSize: T.contact.textFontSize,
+    color: C.textSecondary,
+  },
+  contactColumns: {
+    flexDirection: "row",
+    gap: T.contact.twoColumnGap,
+  },
+  contactColumn: {
+    flex: 1,
+    gap: T.contact.columnLineGap,
   },
   section: {
-    marginTop: 11,
+    marginTop: T.section.marginTop,
   },
   headingRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginBottom: 6,
+    gap: T.heading.titleToRuleGap,
+    marginBottom: T.heading.rowMarginBottom,
   },
   sectionHeading: {
-    fontSize: 12.5,
+    fontSize: T.heading.sectionTitleFontSize,
     fontWeight: 700,
     textTransform: "none",
-    color: "#111827",
+    color: C.textPrimary,
   },
   headingRule: {
     flex: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    marginTop: T.heading.ruleOffsetTop,
+    borderBottomWidth: T.heading.ruleBorderWidth,
+    borderBottomColor: C.rule,
   },
   paragraph: {
-    color: "#111827",
+    color: C.textPrimary,
   },
   list: {
-    gap: 1.5,
+    gap: T.list.itemGap,
     margin: 0,
     padding: 0,
   },
   bulletRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 4,
+    gap: T.list.bulletRowGap,
     margin: 0,
     marginBottom: 0,
     padding: 0,
   },
   bullet: {
-    width: 6,
+    width: T.list.bulletWidth,
     margin: 0,
     padding: 0,
-    fontSize: 10.5,
-    lineHeight: 1.15,
+    fontSize: T.list.bulletFontSize,
+    lineHeight: T.list.bulletLineHeight,
     textAlign: "center",
-    color: "#111827",
+    color: C.textPrimary,
   },
   bulletText: {
     flex: 1,
     margin: 0,
     padding: 0,
-    fontSize: 10.5,
-    lineHeight: 1.15,
-    color: "#111827",
+    fontSize: T.list.bulletFontSize,
+    lineHeight: T.list.bulletLineHeight,
+    color: C.textPrimary,
   },
   jobBlock: {
-    marginTop: 6,
+    marginTop: T.jobBlock.marginTop,
+  },
+  projectRow: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+  },
+  projectPhoto: {
+    width: 56,
+    height: 56,
+    objectFit: "cover",
+    borderRadius: 6,
   },
   jobTitle: {
-    fontSize: 11,
+    fontSize: T.jobBlock.titleFontSize,
     fontWeight: 700,
-    color: "#111827",
+    color: C.textPrimary,
   },
   jobMeta: {
-    marginTop: 2,
-    fontSize: 9.5,
-    color: "#4B5563",
+    marginTop: T.jobBlock.metaMarginTop,
+    fontSize: T.jobBlock.metaFontSize,
+    color: C.textMeta,
+  },
+  projectTechLine: {
+    marginTop: 4,
   },
   jobHighlights: {
-    marginTop: 2,
+    marginTop: T.jobBlock.highlightsMarginTop,
   },
   educationBlock: {
-    marginTop: 6,
+    marginTop: T.educationBlock.marginTop,
+  },
+  blockStack: {
+    gap: T.stack.blockGap,
+  },
+  tightStack: {
+    gap: T.stack.tightGap,
   },
   pageNumber: {
     position: "absolute",
-    bottom: 18,
+    bottom: T.pageNumber.bottom,
     left: 0,
     right: 0,
     textAlign: "center",
-    fontSize: 9,
-    color: "#6B7280",
+    fontSize: T.pageNumber.fontSize,
+    color: C.pageNumber,
   },
 });
 
@@ -165,9 +220,11 @@ function hasValue(v: string | undefined): boolean {
 function projectHasContent(p: ProjectEntry): boolean {
   const tech = (p.tech ?? []).some((t) => t.trim().length > 0);
   const bullets = (p.bullets ?? []).some((b) => b.trim().length > 0);
+  const photo = hasValue(p.photoUrl);
   return (
     hasValue(p.name) ||
     hasValue(p.description) ||
+    photo ||
     tech ||
     hasValue(p.link) ||
     bullets
@@ -241,7 +298,7 @@ type ContactKind =
 type ContactEntry = { kind: ContactKind; text: string };
 
 function PdfContactIcon({ kind }: { kind: ContactKind }) {
-  const stroke = "#111827";
+  const stroke = resumePdfColors.textPrimary;
   if (kind === "phone") {
     return (
       <Svg
@@ -405,7 +462,7 @@ function SectionHeading({ title }: { title: string }) {
   return (
     <View
       style={styles.headingRow}
-      minPresenceAhead={SECTION_HEADING_MIN_PRESENCE_AHEAD}
+      minPresenceAhead={resumePdfTheme.sectionHeadingMinPresenceAhead}
     >
       <Text style={styles.sectionHeading}>{title}</Text>
       <View style={styles.headingRule} />
@@ -413,7 +470,13 @@ function SectionHeading({ title }: { title: string }) {
   );
 }
 
-export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
+export function ResumePdfDocument({
+  draft,
+  variant = "ats",
+  assetBaseUrl,
+}: Props) {
+  const fontFamily = assetBaseUrl ? "NotoSansCyrillic" : "Helvetica";
+  if (assetBaseUrl) ensurePdfFontsRegistered(assetBaseUrl);
   const labels = getLabels(draft.language);
   const h = draft.header;
 
@@ -466,7 +529,7 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
         return draft.sections.experience.length ? (
           <View style={styles.section}>
             <SectionHeading title={labels.experience} />
-            <View style={{ gap: 6 }}>
+            <View style={styles.blockStack}>
               {draft.sections.experience.map((job, idx) => {
                 const meta = [job.company, job.location, job.dates]
                   .map((x) => x.trim())
@@ -509,7 +572,7 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
         return (
           <View style={styles.section}>
             <SectionHeading title={labels.projects} />
-            <View style={{ gap: 6 }}>
+            <View style={styles.blockStack}>
               {projectItems.map((p, idx) => {
                 const techLine = (p.tech ?? [])
                   .map((t) => t.trim())
@@ -519,40 +582,49 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
                   .map((s) => s.trim())
                   .filter(Boolean);
                 const href = hasValue(p.link) ? pdfLinkSrc(p.link) : null;
+                const showProjectPhoto =
+                  variant === "recruiter" && isSafePdfImageSrc(p.photoUrl);
                 return (
                   <View
                     key={`proj-${idx}-${p.clientKey ?? p.name}`}
                     style={styles.jobBlock}
                   >
-                    {hasValue(p.name) || hasValue(p.link) ? (
-                      <View wrap={false}>
-                        {hasValue(p.name) ? (
-                          <Text style={styles.jobTitle}>{p.name}</Text>
+                    <View style={styles.projectRow}>
+                      {showProjectPhoto ? (
+                        <PdfImage style={styles.projectPhoto} src={p.photoUrl!} />
+                      ) : null}
+                      <View style={{ flex: 1 }}>
+                        {hasValue(p.name) || hasValue(p.link) ? (
+                          <View wrap={false}>
+                            {hasValue(p.name) ? (
+                              <Text style={styles.jobTitle}>{p.name}</Text>
+                            ) : null}
+                          </View>
+                        ) : null}
+                        {hasValue(p.description) ? (
+                          <Text style={styles.paragraph}>
+                            {p.description.trim()}
+                          </Text>
                         ) : null}
                         {hasValue(p.link) && href ? (
-                          <Link src={href} style={styles.paragraph}>
+                          <Link src={href} style={styles.jobMeta}>
                             {p.link.trim()}
                           </Link>
                         ) : hasValue(p.link) ? (
-                          <Text style={styles.paragraph}>{p.link.trim()}</Text>
+                          <Text style={styles.jobMeta}>{p.link.trim()}</Text>
+                        ) : null}
+                        {bullets.length ? (
+                          <View style={styles.jobHighlights}>
+                            <BulletList items={bullets} />
+                          </View>
+                        ) : null}
+                        {techLine ? (
+                          <Text style={[styles.paragraph, styles.projectTechLine]}>
+                            {labels.projectTechInlineLabel} {techLine}
+                          </Text>
                         ) : null}
                       </View>
-                    ) : null}
-                    {hasValue(p.description) ? (
-                      <Text style={styles.paragraph}>
-                        {p.description.trim()}
-                      </Text>
-                    ) : null}
-                    {bullets.length ? (
-                      <View style={styles.jobHighlights}>
-                        <BulletList items={bullets} />
-                      </View>
-                    ) : null}
-                    {techLine ? (
-                      <Text style={styles.paragraph}>
-                        {labels.projectTechInlineLabel} {techLine}
-                      </Text>
-                    ) : null}
+                    </View>
                   </View>
                 );
               })}
@@ -570,7 +642,7 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
         return (
           <View style={styles.section}>
             <SectionHeading title={labels.education} />
-            <View style={{ gap: 0 }}>
+            <View style={styles.tightStack}>
               {educationItems.map((e, idx) => {
                 const meta = [e.institution, e.location, e.dates]
                   .map((x) => x.trim())
@@ -631,7 +703,7 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
               <CourseCard course={firstCourse} idx={0} />
             </View>
             {restCourses.length ? (
-              <View style={{ gap: 6 }}>
+              <View style={styles.blockStack}>
                 {restCourses.map((course, idx) => (
                   <CourseCard
                     key={`course-${idx + 1}-${course.clientKey ?? course.title}`}
@@ -651,12 +723,12 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={[styles.page, { fontFamily }]}>
         <View style={styles.headerRow}>
           {showPhoto ? (
             <PdfImage style={styles.photo} src={h.photoUrl!} />
           ) : null}
-          <View style={{ flex: 1 }}>
+          <View style={styles.headerNameColumn}>
             <Text style={styles.name}>{h.fullName || "Resume"}</Text>
             {hasValue(h.title) ? (
               <Text style={styles.title}>{h.title}</Text>
@@ -667,8 +739,8 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
         {contactEntries.length ? (
           <View style={styles.section}>
             <SectionHeading title={labels.contacts} />
-            <View style={{ flexDirection: "row", gap: 18 }}>
-              <View style={{ flex: 1, gap: 4 }}>
+            <View style={styles.contactColumns}>
+              <View style={styles.contactColumn}>
                 {leftContacts.map((entry, idx) => (
                   <PdfContactLine
                     key={`l-${idx}-${entry.kind}-${entry.text}`}
@@ -677,7 +749,7 @@ export function ResumePdfDocument({ draft, variant = "ats" }: Props) {
                   />
                 ))}
               </View>
-              <View style={{ flex: 1, gap: 4 }}>
+              <View style={styles.contactColumn}>
                 {rightContacts.map((entry, idx) => (
                   <PdfContactLine
                     key={`r-${idx}-${entry.kind}-${entry.text}`}

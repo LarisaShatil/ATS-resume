@@ -48,8 +48,14 @@ export function ResumePdfEmbed({ draft, variant, labels }: Props) {
       setFailed(false);
       void (async () => {
         try {
+          const assetBaseUrl =
+            typeof window !== "undefined" ? window.location.origin : undefined;
           const blob = await pdf(
-            <ResumePdfDocument draft={draft} variant={variant} />,
+            <ResumePdfDocument
+              draft={draft}
+              variant={variant}
+              assetBaseUrl={assetBaseUrl}
+            />,
           ).toBlob();
           const url = URL.createObjectURL(blob);
           if (cancelled) {
@@ -99,11 +105,14 @@ export function ResumePdfEmbed({ draft, variant, labels }: Props) {
   return (
     <>
       {blobUrl ? (
-        <iframe
-          title="PDF preview"
-          src={blobUrl}
-          className="h-[min(720px,calc(100vh-14rem))] w-full border-0 bg-white"
-        />
+        <>
+          {/* Same PDF bytes as download; viewer zoom varies by browser — layout tokens live in pdf-theme.ts */}
+          <iframe
+            title="PDF preview"
+            src={blobUrl}
+            className="h-[min(720px,calc(100vh-14rem))] w-full border-0 bg-white"
+          />
+        </>
       ) : null}
       {loading && blobUrl ? (
         <p className="mt-2 text-center text-xs text-slate-500" role="status">

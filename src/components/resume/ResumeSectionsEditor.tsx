@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
   closestCenter,
@@ -214,6 +214,114 @@ function ProjectTechCommaField({
   );
 }
 
+function ProjectPhotoField({
+  label,
+  photoUrl,
+  onChange,
+}: {
+  label: string;
+  photoUrl: string;
+  onChange: (next: string) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  function hasValue(v: string | undefined): boolean {
+    return Boolean(v && v.trim().length > 0);
+  }
+
+  function clear() {
+    setMessage(null);
+    onChange("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function openFilePicker() {
+    setMessage(null);
+    fileInputRef.current?.click();
+  }
+
+  function onPickPhoto(file: File | null) {
+    setMessage(null);
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setMessage("Please choose an image file (PNG/JPG/WebP).");
+      return;
+    }
+
+    const maxBytes = 2 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      setMessage("Image is too large. Please choose a file up to 2 MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () =>
+      setMessage("Could not read this file. Please try another image.");
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : null;
+      if (!result) {
+        setMessage("Could not read this file. Please try another image.");
+        return;
+      }
+      onChange(result);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <div className="block">
+      <div className="flex items-end justify-between gap-3">
+        <div className="text-xs font-medium text-slate-600">{label}</div>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => onPickPhoto(e.currentTarget.files?.[0] ?? null)}
+          />
+          <button
+            type="button"
+            onClick={openFilePicker}
+            className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          >
+            Upload
+          </button>
+          {hasValue(photoUrl) ? (
+            <button
+              type="button"
+              onClick={clear}
+              className="rounded-md border border-rose-200 bg-white px-2.5 py-1 text-xs font-medium text-rose-700 shadow-sm hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
+      </div>
+      <input
+        type="url"
+        inputMode="url"
+        value={photoUrl ?? ""}
+        onChange={(e) => {
+          setMessage(null);
+          onChange(e.target.value);
+        }}
+        placeholder="https://... (or upload)"
+        className="mt-1 h-7 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white"
+      />
+      {message ? <div className="mt-2 text-xs text-rose-600">{message}</div> : null}
+      {photoUrl?.startsWith("http") ? (
+        <div className="mt-2 text-xs text-slate-500">
+          Note: Some image hosts block PDF export due to CORS. Upload is the most
+          reliable option.
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function newJob(): ExperienceJob {
   return {
     clientKey: newExperienceJobClientKey(),
@@ -241,6 +349,7 @@ function newProject(): ProjectEntry {
     clientKey: newExperienceJobClientKey(),
     name: "",
     description: "",
+    photoUrl: "",
     tech: [],
     link: "",
     bullets: [],
@@ -295,6 +404,151 @@ function DragGripHandle({
         <circle cx="10" cy="14" r="1.35" fill="currentColor" />
       </svg>
     </button>
+  );
+}
+
+function SectionTitle({
+  title,
+  icon,
+}: {
+  title: string;
+  icon: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="text-xs font-semibold tracking-wider text-slate-900 uppercase">
+        {title}
+      </div>
+      <span className="text-indigo-600" aria-hidden="true">
+        {icon}
+      </span>
+    </div>
+  );
+}
+
+function SectionIcon({
+  kind,
+}: {
+  kind:
+    | "skills"
+    | "experience"
+    | "projects"
+    | "education"
+    | "languages"
+    | "certificates";
+}) {
+  const cls = "h-4 w-4";
+  if (kind === "skills") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className={cls}>
+        <path
+          d="M12 2l2.2 6.2L21 9.3l-5 3.8 1.9 6.6L12 16.9 6.1 19.7 8 13.1 3 9.3l6.8-1.1L12 2z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  if (kind === "experience") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className={cls}>
+        <path
+          d="M9 6V5a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M4 7h16v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M4 12h16"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+  if (kind === "projects") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className={cls}>
+        <path
+          d="M4 4h6v6H4V4zM14 4h6v6h-6V4zM4 14h6v6H4v-6zM14 14h6v6h-6v-6z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  if (kind === "education") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className={cls}>
+        <path
+          d="M12 3L2 8l10 5 10-5-10-5z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+  if (kind === "languages") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" className={cls}>
+        <path
+          d="M4 5h8v6H4V5z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M12 8h8M12 12h6"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M4 19h8v-6H4v6z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={cls}>
+      <path
+        d="M7 3h10v4H7V3z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6 7h12v14H6V7z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 11h6M9 15h6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
@@ -614,6 +868,13 @@ function ProjectFields({
           value={project.link}
           onChange={(v) => patchProject(idx, { link: v })}
           placeholder="https://github.com/…"
+        />
+      </div>
+      <div className="mt-3">
+        <ProjectPhotoField
+          label={labels.projectPhotoUrl}
+          photoUrl={project.photoUrl ?? ""}
+          onChange={(v) => patchProject(idx, { photoUrl: v })}
         />
       </div>
       <div className="mt-3">
@@ -1407,11 +1668,14 @@ export function ResumeSectionsEditor({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1.5">
           {dragHandle}
-          <div className="text-xs font-medium text-slate-600">
-            {skillsHeadingVariant === "technicalSkills"
-              ? labels.technicalSkills
-              : labels.skills}
-          </div>
+          <SectionTitle
+            title={
+              skillsHeadingVariant === "technicalSkills"
+                ? labels.technicalSkills
+                : labels.skills
+            }
+            icon={<SectionIcon kind="skills" />}
+          />
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-700">
           <label className="inline-flex items-center gap-2">
@@ -1466,9 +1730,10 @@ export function ResumeSectionsEditor({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1.5">
           {dragHandle}
-          <div className="text-xs font-medium text-slate-600">
-            {labels.experience}
-          </div>
+          <SectionTitle
+            title={labels.experience}
+            icon={<SectionIcon kind="experience" />}
+          />
         </div>
         <button
           type="button"
@@ -1535,9 +1800,10 @@ export function ResumeSectionsEditor({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1.5">
           {dragHandle}
-          <div className="text-xs font-medium text-slate-600">
-            {labels.projects}
-          </div>
+          <SectionTitle
+            title={labels.projects}
+            icon={<SectionIcon kind="projects" />}
+          />
         </div>
         <button
           type="button"
@@ -1604,9 +1870,10 @@ export function ResumeSectionsEditor({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1.5">
           {dragHandle}
-          <div className="text-xs font-medium text-slate-600">
-            {labels.education}
-          </div>
+          <SectionTitle
+            title={labels.education}
+            icon={<SectionIcon kind="education" />}
+          />
         </div>
         <button
           type="button"
@@ -1678,9 +1945,10 @@ export function ResumeSectionsEditor({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1.5">
           {dragHandle}
-          <div className="text-xs font-medium text-slate-600">
-            {labels.languages}
-          </div>
+          <SectionTitle
+            title={labels.languages}
+            icon={<SectionIcon kind="languages" />}
+          />
         </div>
         <button
           type="button"
@@ -1746,9 +2014,10 @@ export function ResumeSectionsEditor({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1.5">
           {dragHandle}
-          <div className="text-xs font-medium text-slate-600">
-            {labels.certificates}
-          </div>
+          <SectionTitle
+            title={labels.certificates}
+            icon={<SectionIcon kind="certificates" />}
+          />
         </div>
         <button
           type="button"

@@ -90,6 +90,8 @@ function isProjectEntry(value: unknown): value is ProjectEntry {
   const keyOk =
     value.clientKey === undefined ||
     (typeof value.clientKey === "string" && value.clientKey.length > 0);
+  const photoOk =
+    value.photoUrl === undefined || typeof value.photoUrl === "string";
   const techOk =
     value.tech === undefined ||
     (Array.isArray(value.tech) && value.tech.every((x) => typeof x === "string"));
@@ -99,6 +101,7 @@ function isProjectEntry(value: unknown): value is ProjectEntry {
       value.bullets.every((x) => typeof x === "string"));
   return (
     keyOk &&
+    photoOk &&
     techOk &&
     bulletsOk &&
     typeof value.name === "string" &&
@@ -176,6 +179,7 @@ function normalizeProjects(value: unknown): ProjectEntry[] {
     name: p.name,
     description: p.description,
     link: p.link,
+    photoUrl: typeof p.photoUrl === "string" ? p.photoUrl : "",
     tech: uniqTechStrings(
       Array.isArray(p.tech) ? p.tech : [],
     ),
@@ -308,9 +312,21 @@ export function saveDraft(draft: ResumeDraft): void {
   if (typeof window === "undefined") return;
   try {
     const photoUrl = draft.header.photoUrl ?? "";
-    const safeDraft: ResumeDraft = photoUrl.startsWith("data:")
-      ? { ...draft, header: { ...draft.header, photoUrl: "" } }
-      : draft;
+    const safeHeader = photoUrl.startsWith("data:")
+      ? { ...draft.header, photoUrl: "" }
+      : draft.header;
+    const safeProjects = (draft.sections.projects ?? []).map((p) => {
+      const pPhoto = p.photoUrl ?? "";
+      return pPhoto.startsWith("data:") ? { ...p, photoUrl: "" } : p;
+    });
+    const safeDraft: ResumeDraft = {
+      ...draft,
+      header: safeHeader,
+      sections: {
+        ...draft.sections,
+        projects: safeProjects,
+      },
+    };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(safeDraft));
   } catch {

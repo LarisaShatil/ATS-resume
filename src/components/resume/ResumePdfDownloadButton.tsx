@@ -33,8 +33,14 @@ export function ResumePdfDownloadButton({ labels, draft, fileName, variant }: Pr
 
     setLoading(true);
     try {
+      const assetBaseUrl =
+        typeof window !== "undefined" ? window.location.origin : undefined;
       const blob = await pdf(
-        <ResumePdfDocument draft={draft} variant={variant} />,
+        <ResumePdfDocument
+          draft={draft}
+          variant={variant}
+          assetBaseUrl={assetBaseUrl}
+        />,
       ).toBlob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");

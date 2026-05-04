@@ -70,6 +70,7 @@ export type ResumeLabels = {
 
   projectName: string;
   projectDescription: string;
+  projectPhotoUrl: string;
   projectTech: string;
   projectLink: string;
   projectBullets: string;
@@ -152,6 +153,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
 
     projectName: "Project name",
     projectDescription: "Short description (one line)",
+    projectPhotoUrl: "Project photo (optional, recruiter PDF only)",
     projectTech: "Tech stack",
     projectLink: "Link (optional)",
     projectBullets: "Bullets (one per line)",
@@ -231,6 +233,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
 
     projectName: "Назва проєкту",
     projectDescription: "Короткий опис (один рядок)",
+    projectPhotoUrl: "Фото проєкту (необов’язково, лише для recruiter PDF)",
     projectTech: "Технології",
     projectLink: "Посилання (необов’язково)",
     projectBullets: "Пункти (по одному на рядок)",
@@ -310,6 +313,7 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
 
     projectName: "Название проекта",
     projectDescription: "Краткое описание (одна строка)",
+    projectPhotoUrl: "Фото проекта (необязательно, только для recruiter PDF)",
     projectTech: "Стек технологий",
     projectLink: "Ссылка (необязательно)",
     projectBullets: "Пункты (по одному на строку)",

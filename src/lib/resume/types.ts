@@ -47,6 +47,8 @@ export interface ProjectEntry {
   clientKey?: string;
   name: string;
   description: string;
+  /** Optional screenshot/logo for recruiter-friendly PDF variant. */
+  photoUrl?: string;
   tech: string[];
   link: string;
   bullets: string[];

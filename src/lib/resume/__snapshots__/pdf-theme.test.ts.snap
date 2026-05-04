@@ -1,0 +1,64 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`resume PDF theme (spacing single source of truth) > matches snapshot so accidental edits are caught in CI 1`] = `
+{
+  "contact": {
+    "columnLineGap": 4,
+    "iconSize": 12,
+    "rowGap": 6,
+    "textFontSize": 9.5,
+    "twoColumnGap": 18,
+  },
+  "educationBlock": {
+    "marginTop": 6,
+  },
+  "header": {
+    "nameFontSize": 21,
+    "nameLineHeight": 1.1,
+    "photoSize": 76,
+    "rowGap": 12,
+    "titleFontSize": 11,
+    "titleMarginTop": 2,
+  },
+  "heading": {
+    "rowMarginBottom": 6,
+    "ruleBorderWidth": 1,
+    "ruleOffsetTop": 3,
+    "sectionTitleFontSize": 12.5,
+    "titleToRuleGap": 10,
+  },
+  "jobBlock": {
+    "highlightsMarginTop": 2,
+    "marginTop": 6,
+    "metaFontSize": 9.5,
+    "metaMarginTop": 2,
+    "titleFontSize": 11,
+  },
+  "list": {
+    "bulletFontSize": 10.5,
+    "bulletLineHeight": 1.15,
+    "bulletRowGap": 4,
+    "bulletWidth": 6,
+    "itemGap": 1.5,
+  },
+  "page": {
+    "fontSize": 10.5,
+    "lineHeight": 1.25,
+    "paddingBottom": 32,
+    "paddingHorizontal": 36,
+    "paddingTop": 28,
+  },
+  "pageNumber": {
+    "bottom": 18,
+    "fontSize": 9,
+  },
+  "section": {
+    "marginTop": 11,
+  },
+  "sectionHeadingMinPresenceAhead": 52,
+  "stack": {
+    "blockGap": 6,
+    "tightGap": 0,
+  },
+}
+`;
