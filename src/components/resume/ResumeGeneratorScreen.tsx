@@ -151,6 +151,10 @@ export function ResumeGeneratorScreen() {
             jobDescription={draft.jobDescription}
             onChange={(patch) => patchDraft(patch)}
             onGenerate={onGenerateFromText}
+            onImportDraft={(nextDraft) => {
+              setSourceMessage(null);
+              setDraft(nextDraft);
+            }}
             message={sourceMessage}
           />
         </div>

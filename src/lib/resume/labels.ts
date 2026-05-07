@@ -34,6 +34,13 @@ export type ResumeLabels = {
   sourceText: string;
   jobDescription: string;
 
+  importJsonFile: string;
+  importJsonPaste: string;
+  importJsonPastePlaceholder: string;
+  importJsonApply: string;
+  importJsonInvalid: string;
+  importJsonSuccess: string;
+
   summary: string;
   skills: string;
   technicalSkills: string;
@@ -118,6 +125,14 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     sourceText: "Full career text / master profile",
     jobDescription: "Vacancy description",
 
+    importJsonFile: "Import from JSON file",
+    importJsonPaste: "Or paste draft JSON",
+    importJsonPastePlaceholder:
+      'Paste JSON here (example: {"language":"en","header":{...},"sections":{...}})',
+    importJsonApply: "Apply import",
+    importJsonInvalid: "Invalid JSON file/content.",
+    importJsonSuccess: "Imported draft from JSON.",
+
     summary: "Professional Summary",
     skills: "Skills",
     technicalSkills: "Technical Skills",
@@ -198,6 +213,14 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
     sourceText: "Повний текст кар’єри / майстер-профіль",
     jobDescription: "Опис вакансії",
 
+    importJsonFile: "Імпортувати з JSON-файлу",
+    importJsonPaste: "Або вставте JSON чернетки",
+    importJsonPastePlaceholder:
+      'Вставте JSON тут (приклад: {"language":"uk","header":{...},"sections":{...}})',
+    importJsonApply: "Застосувати імпорт",
+    importJsonInvalid: "Некоректний JSON-файл/вміст.",
+    importJsonSuccess: "Чернетку імпортовано з JSON.",
+
     summary: "Професійний профіль",
     skills: "Навички",
     technicalSkills: "Технічні навички",
@@ -277,6 +300,14 @@ export const LABELS: Record<ResumeLanguage, ResumeLabels> = {
 
     sourceText: "Полный текст карьеры / мастер-профиль",
     jobDescription: "Описание вакансии",
+
+    importJsonFile: "Импортировать из JSON-файла",
+    importJsonPaste: "Или вставьте JSON черновика",
+    importJsonPastePlaceholder:
+      'Вставьте JSON сюда (пример: {"language":"ru","header":{...},"sections":{...}})',
+    importJsonApply: "Применить импорт",
+    importJsonInvalid: "Некорректный JSON-файл/содержимое.",
+    importJsonSuccess: "Черновик импортирован из JSON.",
 
     summary: "Профессиональный профиль",
     skills: "Навыки",

@@ -4,6 +4,7 @@ import { normalizeBodySectionsOrder } from "./body-section-order";
 import { DEFAULT_DRAFT, STORAGE_KEY } from "./types";
 import type { ResumeDraft } from "./types";
 import { isPresetSpokenLanguageName } from "./spoken-language-presets";
+import type { ResumeLanguage } from "./types";
 import type {
   CourseCertificationEntry,
   EducationEntry,
@@ -14,6 +15,10 @@ import type {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function isResumeLanguage(value: unknown): value is ResumeLanguage {
+  return value === "en" || value === "uk" || value === "ru";
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -277,9 +282,21 @@ function mergeDraft(partial: unknown): ResumeDraft {
   const p = partial as Partial<ResumeDraft>;
   const sections = isRecord(p.sections) ? p.sections : null;
 
+  const language: ResumeLanguage = isResumeLanguage(p.language)
+    ? p.language
+    : DEFAULT_DRAFT.language;
+
+  const skills: string[] = isStringArray(sections?.skills)
+    ? sections!.skills.map((x) => x.trim()).filter(Boolean)
+    : DEFAULT_DRAFT.sections.skills;
+
+  const summary: string =
+    typeof sections?.summary === "string" ? sections.summary : DEFAULT_DRAFT.sections.summary;
+
   return {
     ...DEFAULT_DRAFT,
     ...p,
+    language,
     sectionsOrder: normalizeBodySectionsOrder(p.sectionsOrder),
     header: {
       ...DEFAULT_DRAFT.header,
@@ -288,6 +305,8 @@ function mergeDraft(partial: unknown): ResumeDraft {
     sections: {
       ...DEFAULT_DRAFT.sections,
       ...(sections ? sections : null),
+      summary,
+      skills,
       experience: normalizeExperience(sections?.experience),
       education: normalizeEducation(sections?.education),
       languages: normalizeLanguages(sections?.languages),
@@ -295,6 +314,10 @@ function mergeDraft(partial: unknown): ResumeDraft {
       certificates: normalizeCertificates(sections?.certificates),
     },
   };
+}
+
+export function parseResumeDraftJson(text: string): ResumeDraft {
+  return mergeDraft(JSON.parse(text));
 }
 
 export function loadDraft(): ResumeDraft | null {
