@@ -17,9 +17,8 @@ Requirements:
 - Optional: Certifications, Languages
 
 2. ATS RULES:
-- Use standard section headings (Experience, Education, Skills)
 - Ensure high keyword match with the job description
-- Avoid icons or special characters
+- Avoid special characters
 - Output must be ATS-readable plain text
 
 3. BULLET POINTS (CRITICAL):
