@@ -8,28 +8,22 @@ The JSON import textarea expects a **`ResumeDraft`** object shape. You can paste
 {
   "language": "en",
   "header": {
-    "fullName": "Larisa Shatillo",
-    "title": "Frontend Developer",
-    "email": "larysa@example.com",
-    "phone": "+1 555 000 0000",
+    "fullName": "Name Surname",
+    "title": "Job Position",
+    "email": "",
+    "phone": "",
     "location": "Kyiv, Ukraine",
     "photoUrl": "",
-    "linkedIn": "https://www.linkedin.com/in/your-handle",
-    "github": "https://github.com/your-handle",
-    "portfolio": "https://your-portfolio.example"
+    "linkedIn": "https://",
+    "github": "",
+    "portfolio": ""
   },
   "sourceText": "Optional: your master profile / raw career text (not required for JSON-based draft).",
   "jobDescription": "Optional: vacancy / JD text.",
   "sections": {
     "summary": "3–4 lines, keyword-rich, ATS-friendly summary.",
     "skills": [
-      "JavaScript (ES202x)",
-      "TypeScript",
-      "React",
-      "Next.js",
-      "HTML",
-      "CSS",
-      "Tailwind CSS"
+      "Frontend Basics: HTML5, CSS3, JavaScript, Responsive Layouts",
     ],
     "experience": [
       {
